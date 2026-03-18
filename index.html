@@ -1,0 +1,1617 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>3D Math Teacher — Class 1–10</title>
+<style>
+*,*::before,*::after{margin:0;padding:0;box-sizing:border-box}
+:root{
+  --bg:#1a1d2e;--sidebar:#141625;--panel:#1e2137;--accent:#4fc3f7;
+  --accent2:#ff7043;--accent3:#66bb6a;--accent4:#ab47bc;--accent5:#ffd54f;
+  --text:#e0e0e0;--text-dim:#888;--border:#2a2d45;--radius:8px;
+}
+html,body{height:100%;overflow:hidden;font-family:'Segoe UI',system-ui,sans-serif;background:var(--bg);color:var(--text)}
+#app{display:flex;height:100vh;width:100vw}
+
+/* Sidebar */
+#sidebar{width:250px;min-width:250px;background:var(--sidebar);border-right:1px solid var(--border);display:flex;flex-direction:column;z-index:10}
+#sidebar-header{padding:14px 14px 10px;border-bottom:1px solid var(--border)}
+#sidebar-header h1{font-size:1rem;color:var(--accent);letter-spacing:.5px}
+#sidebar-header .subtitle{font-size:.65rem;color:var(--text-dim);margin-top:2px}
+#search-wrap{padding:10px 12px 0;position:relative}
+#search-input{width:100%;padding:8px 10px 8px 30px;background:#0d0e1a;border:1px solid var(--border);color:var(--text);border-radius:var(--radius);font-size:.78rem;outline:none}
+#search-input:focus{border-color:var(--accent)}
+#search-input::placeholder{color:#555}
+#search-icon{position:absolute;left:20px;top:50%;transform:translateY(-50%);color:var(--text-dim);font-size:.75rem;pointer-events:none;margin-top:5px}
+
+/* Class tabs */
+#class-tabs{display:flex;flex-wrap:wrap;gap:4px;padding:10px 12px 6px}
+.class-tab{padding:4px 0;width:calc(20% - 4px);text-align:center;background:#0d0e1a;border:1px solid var(--border);color:var(--text-dim);border-radius:4px;cursor:pointer;font-size:.7rem;font-weight:600;transition:all .15s}
+.class-tab:hover{border-color:var(--accent);color:var(--text)}
+.class-tab.active{background:var(--accent);color:#000;border-color:var(--accent)}
+
+/* Topic list */
+#topic-list{flex:1;overflow-y:auto;padding:4px 0}
+#topic-list::-webkit-scrollbar{width:4px}
+#topic-list::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
+.topic-item{display:flex;align-items:center;gap:8px;padding:9px 14px;cursor:pointer;transition:all .15s;border-left:3px solid transparent;font-size:.78rem;color:var(--text-dim)}
+.topic-item:hover{background:#ffffff06;color:var(--text)}
+.topic-item.active{color:var(--accent);background:#4fc3f710;border-left-color:var(--accent)}
+.topic-item .t-icon{font-size:.9rem;width:20px;text-align:center;flex-shrink:0}
+.topic-item .t-name{line-height:1.3}
+
+/* Search results overlay */
+#search-results{display:none;position:absolute;left:12px;right:12px;top:100%;z-index:20;background:#0d0e1a;border:1px solid var(--border);border-radius:var(--radius);max-height:260px;overflow-y:auto;margin-top:4px}
+.sr-item{padding:8px 12px;font-size:.76rem;color:var(--text-dim);cursor:pointer;border-bottom:1px solid #1a1d2e;transition:all .15s}
+.sr-item:hover{background:#4fc3f712;color:var(--text)}
+.sr-item .sr-class{font-size:.62rem;color:var(--accent);margin-top:1px}
+.sr-empty{padding:12px;text-align:center;font-size:.75rem;color:#555}
+
+#sidebar-footer{padding:8px 12px;border-top:1px solid var(--border);display:flex;gap:6px}
+#sidebar-footer button{flex:1;padding:7px;background:#ffffff06;border:1px solid var(--border);color:var(--text-dim);border-radius:var(--radius);cursor:pointer;font-size:.7rem;transition:all .15s}
+#sidebar-footer button:hover,#sidebar-footer button.active{background:var(--accent);color:#000;border-color:var(--accent)}
+
+/* Center */
+#center{flex:1;display:flex;flex-direction:column;position:relative;overflow:hidden}
+#canvas-wrap{flex:1;position:relative;background:var(--bg)}
+#canvas-wrap canvas{display:block;width:100%!important;height:100%!important}
+#info-bar{position:absolute;top:10px;left:10px;background:#000a;backdrop-filter:blur(8px);padding:6px 12px;border-radius:var(--radius);font-size:.72rem;color:var(--text-dim);pointer-events:none;z-index:5;max-width:60%}
+#info-bar .ib-class{color:var(--accent5);font-weight:600}
+#info-bar .ib-topic{color:var(--accent);font-weight:600}
+#formula-bar{position:absolute;bottom:10px;left:50%;transform:translateX(-50%);background:#000a;backdrop-filter:blur(8px);padding:8px 16px;border-radius:var(--radius);font-size:.85rem;color:var(--accent);pointer-events:none;z-index:5;display:none;font-family:'Courier New',monospace;white-space:nowrap}
+
+/* Right Panel */
+#panel{width:280px;min-width:280px;background:var(--panel);border-left:1px solid var(--border);overflow-y:auto;z-index:10;padding:14px}
+#panel::-webkit-scrollbar{width:4px}
+#panel::-webkit-scrollbar-thumb{background:#333;border-radius:2px}
+#panel h2{font-size:.85rem;color:var(--accent);margin-bottom:10px;padding-bottom:6px;border-bottom:1px solid var(--border)}
+#panel h3{font-size:.75rem;color:var(--accent4);margin:12px 0 6px;text-transform:uppercase;letter-spacing:.5px}
+.cg{margin-bottom:12px}
+.cg label{display:block;font-size:.72rem;color:var(--text-dim);margin-bottom:3px}
+.cg .val{font-size:.68rem;color:var(--accent);float:right;margin-top:-14px}
+.cg input[type=range]{width:100%;accent-color:var(--accent);background:transparent}
+.cg input[type=text],.cg input[type=number],.cg select,.cg textarea{width:100%;padding:6px 8px;background:#0d0e1a;border:1px solid var(--border);color:var(--text);border-radius:var(--radius);font-size:.78rem;outline:none}
+.cg input:focus,.cg textarea:focus,.cg select:focus{border-color:var(--accent)}
+.cg textarea{resize:vertical;min-height:32px}
+.btn{padding:6px 12px;border:1px solid var(--border);background:#ffffff08;color:var(--text);border-radius:var(--radius);cursor:pointer;font-size:.74rem;transition:all .15s}
+.btn:hover{background:var(--accent);color:#000;border-color:var(--accent)}
+.btn.active{background:var(--accent);color:#000;border-color:var(--accent)}
+.btn-row{display:flex;gap:5px;flex-wrap:wrap;margin-bottom:10px}
+.tog-row{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px}
+.tog-row label{font-size:.75rem}
+.tog{position:relative;width:36px;height:20px;cursor:pointer;flex-shrink:0}
+.tog input{opacity:0;width:0;height:0}
+.tog .sl{position:absolute;inset:0;background:#444;border-radius:10px;transition:.2s}
+.tog .sl::before{content:'';position:absolute;width:14px;height:14px;left:3px;top:3px;background:#fff;border-radius:50%;transition:.2s}
+.tog input:checked+.sl{background:var(--accent)}
+.tog input:checked+.sl::before{transform:translateX(16px)}
+.stat{background:#0d0e1a;border:1px solid var(--border);border-radius:var(--radius);padding:8px 10px;margin-bottom:8px}
+.stat .s-label{font-size:.65rem;color:var(--text-dim);text-transform:uppercase;letter-spacing:.3px}
+.stat .s-val{font-size:1rem;color:var(--accent);font-weight:600;margin-top:1px}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+.desc-box{background:#0d0e1a;border:1px solid var(--border);border-radius:var(--radius);padding:10px;margin-bottom:12px;font-size:.74rem;color:var(--text-dim);line-height:1.5}
+hr.sep{border:none;border-top:1px solid var(--border);margin:12px 0}
+
+/* Annotation */
+.ann{position:absolute;pointer-events:none;z-index:6}
+.ann .dot{width:8px;height:8px;background:var(--accent2);border-radius:50%;border:2px solid #fff;margin:-4px 0 0 -4px}
+.ann .lbl{position:absolute;left:10px;top:-8px;background:#000c;backdrop-filter:blur(6px);padding:3px 7px;border-radius:4px;font-size:.68rem;color:#fff;white-space:nowrap;border:1px solid var(--accent2)}
+#ann-modal{display:none;position:absolute;z-index:20;background:#141625;border:1px solid var(--accent2);border-radius:var(--radius);padding:10px;width:200px}
+#ann-modal input{width:100%;padding:5px 7px;background:var(--bg);border:1px solid var(--border);color:var(--text);border-radius:4px;font-size:.78rem;outline:none}
+#ann-modal .mb{display:flex;gap:5px;margin-top:6px}
+#ann-modal .mb button{flex:1}
+
+/* Fullscreen */
+#app.fs #sidebar,#app.fs #panel{display:none}
+</style>
+</head>
+<body>
+<div id="app">
+  <div id="sidebar">
+    <div id="sidebar-header">
+      <h1>3D MATH TEACHER</h1>
+      <div class="subtitle">Interactive · Class 1–10 · 150+ Topics</div>
+    </div>
+    <div id="search-wrap" style="position:relative">
+      <span id="search-icon">🔍</span>
+      <input type="text" id="search-input" placeholder="Search any topic…">
+      <div id="search-results"></div>
+    </div>
+    <div id="class-tabs"></div>
+    <div id="topic-list"></div>
+    <div id="sidebar-footer">
+      <button id="btn-fs">⛶ Fullscreen</button>
+      <button id="btn-ann">✎ Annotate</button>
+    </div>
+  </div>
+  <div id="center">
+    <div id="canvas-wrap">
+      <div id="info-bar"><span class="ib-class">Class 1</span> · <span class="ib-topic">Numbers 1–100</span></div>
+      <div id="formula-bar"></div>
+    </div>
+    <div id="ann-modal"><input type="text" id="ann-text" placeholder="Label…" maxlength="60"><div class="mb"><button class="btn" id="ann-ok">Add</button><button class="btn" id="ann-no">Cancel</button></div></div>
+  </div>
+  <div id="panel"><div id="pc"></div></div>
+</div>
+
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/build/three.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/three@0.128.0/examples/js/controls/OrbitControls.js"></script>
+<script>
+// ════════════════════════════════════════════════════════════
+// CURRICULUM DATA
+// ════════════════════════════════════════════════════════════
+const CUR = [
+{c:1, name:'Class 1', topics:[
+  {id:'c1t1',name:'Numbers 1–100',desc:'Counting, before/after, greater/smaller',eng:'numbers',icon:'🔢',cfg:{max:100}},
+  {id:'c1t2',name:'Addition & Subtraction',desc:'Single-digit addition and subtraction',eng:'arithmetic',icon:'➕',cfg:{op:'add',digits:1}},
+  {id:'c1t3',name:'Basic Shapes',desc:'Circle, square, triangle, rectangle',eng:'shapes2d',icon:'🔷',cfg:{shapes:['circle','square','triangle','rectangle']}},
+  {id:'c1t4',name:'Measurement',desc:'Long/short, heavy/light comparison',eng:'measurement',icon:'📏',cfg:{type:'compare'}},
+  {id:'c1t5',name:'Patterns',desc:'Repeating colour and shape patterns',eng:'patterns',icon:'🔁',cfg:{}},
+  {id:'c1t6',name:'Money — Coins',desc:'Identifying coins and their values',eng:'numbers',icon:'🪙',cfg:{max:10,label:'coins'}},
+  {id:'c1t7',name:'Time — Days & Months',desc:'Days of week, months of year',eng:'clock',icon:'🕐',cfg:{mode:'basic'}},
+]},
+{c:2, name:'Class 2', topics:[
+  {id:'c2t1',name:'Numbers up to 1000',desc:'Reading, writing and comparing 3-digit numbers',eng:'numbers',icon:'🔢',cfg:{max:1000}},
+  {id:'c2t2',name:'Addition & Subtraction',desc:'2–3 digit addition and subtraction',eng:'arithmetic',icon:'➕',cfg:{op:'add',digits:3}},
+  {id:'c2t3',name:'Multiplication Intro',desc:'Tables 2–5, repeated addition',eng:'arithmetic',icon:'✖️',cfg:{op:'mul',digits:1}},
+  {id:'c2t4',name:'Division — Sharing',desc:'Sharing equally, grouping',eng:'arithmetic',icon:'➗',cfg:{op:'div',digits:1}},
+  {id:'c2t5',name:'Shapes & Spatial',desc:'Identifying shapes in surroundings',eng:'shapes2d',icon:'🔷',cfg:{shapes:['circle','square','triangle','rectangle','oval']}},
+  {id:'c2t6',name:'Measurement',desc:'Length, weight, capacity',eng:'measurement',icon:'📏',cfg:{type:'units'}},
+  {id:'c2t7',name:'Money — Rupees & Paise',desc:'Notes and coins, simple billing',eng:'numbers',icon:'💰',cfg:{max:100,label:'money'}},
+  {id:'c2t8',name:'Clock Reading',desc:'Hour and half-hour on analog clock',eng:'clock',icon:'🕐',cfg:{mode:'read'}},
+]},
+{c:3, name:'Class 3', topics:[
+  {id:'c3t1',name:'Numbers up to 10,000',desc:'Place value: Thousands, Hundreds, Tens, Units',eng:'numbers',icon:'🔢',cfg:{max:10000}},
+  {id:'c3t2',name:'Addition & Subtraction',desc:'4-digit addition and subtraction',eng:'arithmetic',icon:'➕',cfg:{op:'add',digits:4}},
+  {id:'c3t3',name:'Multiplication',desc:'Tables up to 10, 2-digit × 1-digit',eng:'arithmetic',icon:'✖️',cfg:{op:'mul',digits:2}},
+  {id:'c3t4',name:'Division',desc:'Basic division with remainders',eng:'arithmetic',icon:'➗',cfg:{op:'div',digits:2}},
+  {id:'c3t5',name:'Fractions',desc:'Half, quarter, one-third — visual models',eng:'fractions',icon:'🥧',cfg:{level:1}},
+  {id:'c3t6',name:'Shapes — 2D & 3D',desc:'Identifying 2D and 3D shapes',eng:'shapes3d',icon:'📦',cfg:{shapes:['cube','cuboid','sphere','cylinder','cone']}},
+  {id:'c3t7',name:'Perimeter',desc:'Measuring perimeter of simple shapes',eng:'perimeter',icon:'📐',cfg:{level:1}},
+  {id:'c3t8',name:'Data Handling',desc:'Tally marks and pictographs',eng:'dataviz',icon:'📊',cfg:{type:'pictograph'}},
+  {id:'c3t9',name:'Money & Time Problems',desc:'Word problems with money and time',eng:'clock',icon:'🕐',cfg:{mode:'problems'}},
+]},
+{c:4, name:'Class 4', topics:[
+  {id:'c4t1',name:'Numbers up to 1,00,000',desc:'Indian place value system, expanded form',eng:'numbers',icon:'🔢',cfg:{max:100000}},
+  {id:'c4t2',name:'Large Number Operations',desc:'Adding and subtracting large numbers',eng:'arithmetic',icon:'➕',cfg:{op:'add',digits:5}},
+  {id:'c4t3',name:'Multiplication',desc:'2-digit × 2-digit multiplication',eng:'arithmetic',icon:'✖️',cfg:{op:'mul',digits:2}},
+  {id:'c4t4',name:'Long Division',desc:'Long division basics',eng:'arithmetic',icon:'➗',cfg:{op:'div',digits:3}},
+  {id:'c4t5',name:'Fractions',desc:'Like fractions, comparison, ordering',eng:'fractions',icon:'🥧',cfg:{level:2}},
+  {id:'c4t6',name:'Decimals',desc:'Introduction to decimal numbers',eng:'fractions',icon:'🔹',cfg:{level:2,mode:'decimal'}},
+  {id:'c4t7',name:'Factors & Multiples',desc:'Factor pairs, common multiples',eng:'factors',icon:'🔗',cfg:{}},
+  {id:'c4t8',name:'Geometry — Angles & Lines',desc:'Types of angles, line segments, rays',eng:'angles',icon:'📐',cfg:{level:1}},
+  {id:'c4t9',name:'Area & Perimeter',desc:'Area and perimeter of rectangles, squares',eng:'perimeter',icon:'📐',cfg:{level:2}},
+  {id:'c4t10',name:'Measurement — Units',desc:'Conversion between units',eng:'measurement',icon:'📏',cfg:{type:'convert'}},
+  {id:'c4t11',name:'Bar Graphs',desc:'Reading and drawing bar graphs',eng:'dataviz',icon:'📊',cfg:{type:'bar'}},
+]},
+{c:5, name:'Class 5', topics:[
+  {id:'c5t1',name:'Large Numbers',desc:'Numbers up to 1,00,00,000 — Indian system',eng:'numbers',icon:'🔢',cfg:{max:10000000}},
+  {id:'c5t2',name:'Operations on Large Numbers',desc:'All four operations on large numbers',eng:'arithmetic',icon:'🧮',cfg:{op:'add',digits:7}},
+  {id:'c5t3',name:'Fractions',desc:'Unlike fractions, addition, subtraction, multiplication',eng:'fractions',icon:'🥧',cfg:{level:3}},
+  {id:'c5t4',name:'Decimals',desc:'Decimal addition and subtraction',eng:'fractions',icon:'🔹',cfg:{level:3,mode:'decimal'}},
+  {id:'c5t5',name:'Average',desc:'Finding the average of numbers',eng:'dataviz',icon:'📈',cfg:{type:'average'}},
+  {id:'c5t6',name:'Percentage',desc:'Introduction to percentage as "per 100"',eng:'fractions',icon:'%',cfg:{level:3,mode:'percent'}},
+  {id:'c5t7',name:'Profit & Loss',desc:'Introduction to profit and loss',eng:'dataviz',icon:'💹',cfg:{type:'profitloss'}},
+  {id:'c5t8',name:'Geometry',desc:'Triangles, quadrilaterals, circles',eng:'shapes2d',icon:'🔷',cfg:{shapes:['triangle','quadrilateral','circle']}},
+  {id:'c5t9',name:'Area & Perimeter',desc:'Rectangles and squares — formulas',eng:'perimeter',icon:'📐',cfg:{level:3}},
+  {id:'c5t10',name:'Volume Intro',desc:'Volume of cubes and cuboids',eng:'solids',icon:'📦',cfg:{shapes:['cube','cuboid'],level:1}},
+  {id:'c5t11',name:'Data Handling — Pie Chart',desc:'Introduction to pie charts',eng:'dataviz',icon:'📊',cfg:{type:'pie'}},
+  {id:'c5t12',name:'Patterns & Tessellation',desc:'Tessellation and symmetry patterns',eng:'patterns',icon:'🔁',cfg:{type:'tessellation'}},
+]},
+{c:6, name:'Class 6', topics:[
+  {id:'c6t1',name:'Knowing Our Numbers',desc:'Indian & International system, Roman numerals',eng:'numbers',icon:'🔢',cfg:{max:10000000,system:'both'}},
+  {id:'c6t2',name:'Whole Numbers',desc:'Properties of whole numbers, number line',eng:'numberline',icon:'↔️',cfg:{type:'whole'}},
+  {id:'c6t3',name:'Playing with Numbers',desc:'Factors, multiples, LCM, HCF, prime & composite',eng:'factors',icon:'🔗',cfg:{showLCM:true}},
+  {id:'c6t4',name:'Integers',desc:'Introduction to negative numbers, number line',eng:'numberline',icon:'↔️',cfg:{type:'integer'}},
+  {id:'c6t5',name:'Fractions & Decimals',desc:'Operations on fractions and decimals',eng:'fractions',icon:'🥧',cfg:{level:4}},
+  {id:'c6t6',name:'Basic Algebra',desc:'Variables, expressions, simple equations',eng:'algebra',icon:'𝑥',cfg:{level:1}},
+  {id:'c6t7',name:'Ratio & Proportion',desc:'Comparing quantities using ratios',eng:'fractions',icon:'⚖️',cfg:{level:4,mode:'ratio'}},
+  {id:'c6t8',name:'Percentage',desc:'Percentage calculations, conversions',eng:'fractions',icon:'%',cfg:{level:4,mode:'percent'}},
+  {id:'c6t9',name:'Basic Geometry',desc:'Points, lines, angles, triangles, quadrilaterals, circles',eng:'angles',icon:'📐',cfg:{level:2}},
+  {id:'c6t10',name:'Practical Geometry',desc:'Construction with compass and ruler',eng:'angles',icon:'🔧',cfg:{level:2,mode:'construct'}},
+  {id:'c6t11',name:'Mensuration',desc:'Perimeter and area of basic shapes',eng:'perimeter',icon:'📐',cfg:{level:4}},
+  {id:'c6t12',name:'Data Handling',desc:'Mean, median, mode, bar graphs',eng:'dataviz',icon:'📊',cfg:{type:'statistics'}},
+  {id:'c6t13',name:'Symmetry',desc:'Line symmetry, rotational symmetry',eng:'patterns',icon:'🦋',cfg:{type:'symmetry'}},
+]},
+{c:7, name:'Class 7', topics:[
+  {id:'c7t1',name:'Integers — Operations',desc:'Addition, subtraction, multiplication, division of integers',eng:'numberline',icon:'↔️',cfg:{type:'integer',ops:true}},
+  {id:'c7t2',name:'Fractions & Decimals',desc:'All operations on fractions and decimals',eng:'fractions',icon:'🥧',cfg:{level:5}},
+  {id:'c7t3',name:'Rational Numbers',desc:'Introduction to rational numbers',eng:'numberline',icon:'↔️',cfg:{type:'rational'}},
+  {id:'c7t4',name:'Exponents & Powers',desc:'Base, exponent, laws of exponents',eng:'numbers',icon:'²',cfg:{mode:'exponents'}},
+  {id:'c7t5',name:'Algebraic Expressions',desc:'Terms, like/unlike, addition, subtraction',eng:'algebra',icon:'𝑥',cfg:{level:2}},
+  {id:'c7t6',name:'Linear Equations',desc:'Simple linear equations in one variable',eng:'algebra',icon:'𝑥',cfg:{level:2,mode:'linear'}},
+  {id:'c7t7',name:'Ratio, Proportion & Unitary',desc:'Unitary method, direct/inverse variation',eng:'fractions',icon:'⚖️',cfg:{level:5,mode:'ratio'}},
+  {id:'c7t8',name:'Percentage, Profit & Loss',desc:'Discount, simple interest',eng:'dataviz',icon:'💹',cfg:{type:'profitloss'}},
+  {id:'c7t9',name:'Lines & Angles',desc:'Complementary, supplementary, vertically opposite, transversal',eng:'angles',icon:'📐',cfg:{level:3}},
+  {id:'c7t10',name:'Triangles — Congruence',desc:'Properties, SSS, SAS, ASA, RHS',eng:'triangles',icon:'🔺',cfg:{level:1}},
+  {id:'c7t11',name:'Quadrilaterals & Polygons',desc:'Types and properties of quadrilaterals',eng:'angles',icon:'⬠',cfg:{level:3,mode:'quad'}},
+  {id:'c7t12',name:'Perimeter & Area',desc:'Triangles, parallelogram, circles',eng:'perimeter',icon:'📐',cfg:{level:5}},
+  {id:'c7t13',name:'Surface Area & Volume',desc:'Cubes and cuboids',eng:'solids',icon:'📦',cfg:{shapes:['cube','cuboid'],level:2}},
+  {id:'c7t14',name:'Data Handling & Probability',desc:'Range, mean, median, mode, probability intro',eng:'dataviz',icon:'📊',cfg:{type:'statistics',prob:true}},
+  {id:'c7t15',name:'Symmetry & Solid Shapes',desc:'Rotational symmetry, visualizing 3D shapes',eng:'solids',icon:'📦',cfg:{shapes:['cube','cuboid','cylinder','cone','sphere'],level:2}},
+]},
+{c:8, name:'Class 8', topics:[
+  {id:'c8t1',name:'Rational Numbers',desc:'Properties, operations, representation on number line',eng:'numberline',icon:'↔️',cfg:{type:'rational'}},
+  {id:'c8t2',name:'Linear Equations in One Variable',desc:'Solving equations with variable on both sides',eng:'algebra',icon:'𝑥',cfg:{level:3}},
+  {id:'c8t3',name:'Understanding Quadrilaterals',desc:'Types: trapezium, parallelogram, rhombus, rectangle, square',eng:'angles',icon:'⬠',cfg:{level:4,mode:'quad'}},
+  {id:'c8t4',name:'Practical Geometry',desc:'Constructing quadrilaterals with given measurements',eng:'angles',icon:'🔧',cfg:{level:4,mode:'construct'}},
+  {id:'c8t5',name:'Squares & Square Roots',desc:'Perfect squares, finding square roots',eng:'numbers',icon:'√',cfg:{mode:'squares'}},
+  {id:'c8t6',name:'Cubes & Cube Roots',desc:'Perfect cubes, cube root methods',eng:'numbers',icon:'³√',cfg:{mode:'cubes'}},
+  {id:'c8t7',name:'Exponents & Powers',desc:'Negative/zero exponents, standard form',eng:'numbers',icon:'²',cfg:{mode:'exponents'}},
+  {id:'c8t8',name:'Algebraic Identities',desc:'(a+b)², (a-b)², a²-b², multiplication of polynomials',eng:'algebra',icon:'𝑥',cfg:{level:3,mode:'identity'}},
+  {id:'c8t9',name:'Factorization',desc:'Common factor, regrouping, using identities',eng:'algebra',icon:'𝑥',cfg:{level:3,mode:'factor'}},
+  {id:'c8t10',name:'Comparing Quantities',desc:'Percentage, profit/loss, discount, GST, compound interest',eng:'dataviz',icon:'💹',cfg:{type:'compound'}},
+  {id:'c8t11',name:'Direct & Inverse Proportion',desc:'Direct and inverse variation',eng:'graph2d',icon:'📈',cfg:{type:'proportion'}},
+  {id:'c8t12',name:'Mensuration',desc:'Area of polygons, SA & volume of cylinder, cone, sphere',eng:'solids',icon:'📦',cfg:{shapes:['cylinder','cone','sphere'],level:3}},
+  {id:'c8t13',name:'Introduction to Graphs',desc:'Line graph, bar graph, pie chart, linear graph',eng:'graph2d',icon:'📈',cfg:{type:'intro'}},
+  {id:'c8t14',name:'Data Handling & Probability',desc:'Frequency distribution, probability',eng:'dataviz',icon:'📊',cfg:{type:'frequency'}},
+  {id:'c8t15',name:'Visualizing Solid Shapes',desc:'Views of 3D shapes — top, front, side',eng:'solids',icon:'📦',cfg:{shapes:['cube','cuboid','cylinder','cone','sphere','prism'],level:3}},
+]},
+{c:9, name:'Class 9', topics:[
+  {id:'c9t1',name:'Number Systems',desc:'Irrational numbers, real number line, laws of exponents',eng:'numberline',icon:'↔️',cfg:{type:'real'}},
+  {id:'c9t2',name:'Polynomials',desc:'Degree, zeros, remainder & factor theorem, identities',eng:'graph2d',icon:'📈',cfg:{type:'polynomial'}},
+  {id:'c9t3',name:'Coordinate Geometry',desc:'Cartesian plane, plotting points, quadrants',eng:'coordinate',icon:'⊹',cfg:{level:1}},
+  {id:'c9t4',name:'Linear Equations in Two Variables',desc:'Solutions, graphing lines on coordinate plane',eng:'graph2d',icon:'📈',cfg:{type:'linear2var'}},
+  {id:'c9t5',name:"Euclid's Geometry",desc:'Axioms, postulates, basic theorems',eng:'angles',icon:'📐',cfg:{level:5,mode:'euclid'}},
+  {id:'c9t6',name:'Lines & Angles',desc:'Theorems on parallel lines, triangle angle sum',eng:'angles',icon:'📐',cfg:{level:5}},
+  {id:'c9t7',name:'Triangles',desc:'Congruence rules, inequalities',eng:'triangles',icon:'🔺',cfg:{level:2}},
+  {id:'c9t8',name:'Quadrilaterals',desc:'Properties, mid-point theorem',eng:'angles',icon:'⬠',cfg:{level:5,mode:'quad'}},
+  {id:'c9t9',name:'Circles',desc:'Chord properties, angle subtended, cyclic quadrilateral',eng:'circles',icon:'⭕',cfg:{level:1}},
+  {id:'c9t10',name:'Constructions',desc:'Bisectors, constructing triangles',eng:'angles',icon:'🔧',cfg:{level:5,mode:'construct'}},
+  {id:'c9t11',name:"Heron's Formula",desc:'Area of triangles and quadrilaterals using sides',eng:'triangles',icon:'🔺',cfg:{level:2,mode:'heron'}},
+  {id:'c9t12',name:'Surface Area & Volume',desc:'Cuboid, cylinder, cone, sphere, hemisphere',eng:'solids',icon:'📦',cfg:{shapes:['cuboid','cylinder','cone','sphere','hemisphere'],level:4}},
+  {id:'c9t13',name:'Statistics',desc:'Frequency distribution, mean, median, mode, histograms, ogive',eng:'dataviz',icon:'📊',cfg:{type:'histogram'}},
+  {id:'c9t14',name:'Probability',desc:'Experimental and classical probability',eng:'probability',icon:'🎲',cfg:{level:1}},
+]},
+{c:10, name:'Class 10', topics:[
+  {id:'c10t1',name:'Real Numbers',desc:"Euclid's division lemma, HCF, LCM, irrational proofs",eng:'factors',icon:'🔢',cfg:{showLCM:true,level:2}},
+  {id:'c10t2',name:'Polynomials',desc:'Zeros, coefficients relationship, division algorithm',eng:'graph2d',icon:'📈',cfg:{type:'polynomial'}},
+  {id:'c10t3',name:'Linear Equations — Two Variables',desc:'Graphical & algebraic methods',eng:'graph2d',icon:'📈',cfg:{type:'linear2var'}},
+  {id:'c10t4',name:'Quadratic Equations',desc:'Factorization, quadratic formula, nature of roots',eng:'graph2d',icon:'📈',cfg:{type:'quadratic'}},
+  {id:'c10t5',name:'Arithmetic Progressions',desc:'nth term, sum of n terms',eng:'ap',icon:'📈',cfg:{}},
+  {id:'c10t6',name:'Triangles — Similarity',desc:'AA, SSS, SAS similarity, Pythagoras theorem',eng:'triangles',icon:'🔺',cfg:{level:3}},
+  {id:'c10t7',name:'Coordinate Geometry',desc:'Distance formula, section formula, area of triangle',eng:'coordinate',icon:'⊹',cfg:{level:2}},
+  {id:'c10t8',name:'Intro to Trigonometry',desc:'Trig ratios, identities, complementary angles',eng:'trig',icon:'∿',cfg:{mode:'ratios'}},
+  {id:'c10t9',name:'Applications of Trigonometry',desc:'Heights and distances',eng:'trig',icon:'∿',cfg:{mode:'heights'}},
+  {id:'c10t10',name:'Circles',desc:'Tangent properties, tangents from external point',eng:'circles',icon:'⭕',cfg:{level:2}},
+  {id:'c10t11',name:'Constructions',desc:'Tangents to circles, similar triangles',eng:'circles',icon:'🔧',cfg:{level:2,mode:'construct'}},
+  {id:'c10t12',name:'Areas Related to Circles',desc:'Sector, segment, combination areas',eng:'circles',icon:'⭕',cfg:{level:2,mode:'area'}},
+  {id:'c10t13',name:'Surface Area & Volume',desc:'Combination of solids, frustum of cone',eng:'solids',icon:'📦',cfg:{shapes:['cylinder','cone','sphere','hemisphere','frustum'],level:5}},
+  {id:'c10t14',name:'Statistics',desc:'Mean, median, mode for grouped data, ogive',eng:'dataviz',icon:'📊',cfg:{type:'grouped'}},
+  {id:'c10t15',name:'Probability',desc:'Classical probability, complementary events',eng:'probability',icon:'🎲',cfg:{level:2}},
+]},
+];
+
+// ════════════════════════════════════════════════════════════
+// APP STATE
+// ════════════════════════════════════════════════════════════
+const APP = { cls:1, topicId:'c1t1', annotating:false, anns:{} };
+let activeEngine = null;
+const container = document.getElementById('canvas-wrap');
+const renderer = new THREE.WebGLRenderer({antialias:true});
+renderer.setPixelRatio(Math.min(devicePixelRatio,2));
+renderer.setClearColor(0x1a1d2e);
+container.appendChild(renderer.domElement);
+function sz(){return{w:container.clientWidth,h:container.clientHeight}}
+
+// Shared helpers
+function mkSprite(text,color='#4fc3f7',fs=40){
+  const c=document.createElement('canvas'),x=c.getContext('2d');
+  x.font=`bold ${fs}px 'Segoe UI',sans-serif`;
+  const m=x.measureText(text);c.width=m.width+16;c.height=fs*1.4;
+  x.font=`bold ${fs}px 'Segoe UI',sans-serif`;x.fillStyle=color;x.fillText(text,8,fs);
+  const t=new THREE.CanvasTexture(c);t.minFilter=THREE.LinearFilter;
+  const s=new THREE.Sprite(new THREE.SpriteMaterial({map:t,transparent:true,depthTest:false}));
+  s.scale.set(c.width/100,c.height/100,1);return s;
+}
+function mkScene(pos=[5,4,5]){
+  const scene=new THREE.Scene(),{w,h}=sz();
+  const cam=new THREE.PerspectiveCamera(50,w/h,0.1,500);cam.position.set(...pos);
+  const ctrl=new THREE.OrbitControls(cam,renderer.domElement);ctrl.enableDamping=true;ctrl.dampingFactor=.08;
+  scene.add(new THREE.AmbientLight(0xffffff,0.5));
+  const dl=new THREE.DirectionalLight(0xffffff,0.7);dl.position.set(5,10,7);scene.add(dl);
+  return{scene,cam,ctrl};
+}
+function mkGrid(scene,size=10,c1=0x4fc3f7,c2=0x222){
+  const g=new THREE.GridHelper(size,size,c1,c2);g.material.opacity=.25;g.material.transparent=true;scene.add(g);return g;
+}
+function addAxes(scene,r=6){
+  [[new THREE.Vector3(1,0,0),0xff5252,'X'],[new THREE.Vector3(0,1,0),0x66bb6a,'Y'],[new THREE.Vector3(0,0,1),0x4fc3f7,'Z']].forEach(([d,col,l])=>{
+    scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),d.clone().multiplyScalar(r)]),new THREE.LineBasicMaterial({color:col})));
+    scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),d.clone().multiplyScalar(-r)]),new THREE.LineBasicMaterial({color:col,transparent:true,opacity:.25})));
+    const s=mkSprite(l,'#'+col.toString(16).padStart(6,'0'));s.position.copy(d.clone().multiplyScalar(r+.4));scene.add(s);
+  });
+}
+function addAxes2D(scene,r=8){
+  const m=new THREE.LineBasicMaterial({color:0x4fc3f7,transparent:true,opacity:.5});
+  scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-r,0,0),new THREE.Vector3(r,0,0)]),m));
+  scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,-r,0),new THREE.Vector3(0,r,0)]),m));
+  const xl=mkSprite('x','#4fc3f7',28);xl.position.set(r+.3,0,0);scene.add(xl);
+  const yl=mkSprite('y','#4fc3f7',28);yl.position.set(0,r+.3,0);scene.add(yl);
+  for(let i=-r+1;i<r;i++){if(!i)continue;const s=mkSprite(String(i),'#555',22);s.position.set(i,-.25,0);scene.add(s);
+    const s2=mkSprite(String(i),'#555',22);s2.position.set(-.35,i,0);scene.add(s2);}
+}
+function clearGroup(arr,scene){arr.forEach(m=>{scene.remove(m);if(m.geometry)m.geometry.dispose();if(m.material){if(Array.isArray(m.material))m.material.forEach(mm=>mm.dispose());else m.material.dispose();}});arr.length=0;}
+
+// ════════════════════════════════════════════════════════════
+// ENGINES
+// ════════════════════════════════════════════════════════════
+const ENGINES = {};
+
+// ── NUMBER BLOCKS ──────────────────────────────────────────
+ENGINES.numbers = {
+  init(cfg){
+    const {scene,cam,ctrl}=mkScene([6,5,6]);mkGrid(scene);
+    let blocks=[],num=5;
+    const colors=[0x4fc3f7,0x66bb6a,0xff7043,0xab47bc,0xffd54f];
+    function build(n){
+      clearGroup(blocks,scene);num=n;
+      for(let i=0;i<Math.min(n,200);i++){
+        const geo=new THREE.BoxGeometry(.85,.85,.85);
+        const mat=new THREE.MeshPhongMaterial({color:colors[i%5],transparent:true,opacity:.8});
+        const m=new THREE.Mesh(geo,mat);
+        // Stack in rows of 10
+        const row=Math.floor(i/10),col=i%10,layer=Math.floor(row/10);
+        m.position.set(col-4.5, layer*.9+.45, -(row%10)*.9);
+        scene.add(m);blocks.push(m);
+        const e=new THREE.LineSegments(new THREE.EdgesGeometry(geo),new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:.15}));
+        e.position.copy(m.position);scene.add(e);blocks.push(e);
+      }
+    }
+    build(num);
+    return{scene,cam,ctrl,update(){},
+      setNum(n){build(n)},getNum(){return num},
+      panel:`<h2>🔢 Number Blocks</h2>
+        <div class="desc-box">${cfg.mode==='exponents'?'Visualize squares, cubes and powers as stacked blocks':cfg.mode==='squares'?'See perfect squares as square grids of blocks':cfg.mode==='cubes'?'See perfect cubes as cube arrangements':'Visualize numbers as unit blocks. Stack of 10 = one ten, 10×10 = hundred.'}</div>
+        <div class="cg"><label>Number <span class="val" id="n-val">5</span></label>
+        <input type="range" id="n-slider" min="1" max="${Math.min(cfg.max||100,200)}" value="5"></div>
+        <div class="stat-grid">
+          <div class="stat"><div class="s-label">Blocks</div><div class="s-val" id="n-count">5</div></div>
+          <div class="stat"><div class="s-label">Rows of 10</div><div class="s-val" id="n-rows">0</div></div>
+        </div>`,
+      bind(){
+        const sl=document.getElementById('n-slider');if(!sl)return;
+        sl.oninput=()=>{const v=+sl.value;document.getElementById('n-val').textContent=v;
+          this.setNum(v);document.getElementById('n-count').textContent=v;
+          document.getElementById('n-rows').textContent=Math.floor(v/10);};
+      }
+    };
+  }
+};
+
+// ── ARITHMETIC ─────────────────────────────────────────────
+ENGINES.arithmetic = {
+  init(cfg){
+    const {scene,cam,ctrl}=mkScene([5,4,8]);mkGrid(scene);
+    let blocks=[];
+    const cA=0x4fc3f7,cB=0xff7043,cR=0x66bb6a;
+    let a=3,b=2,op=cfg.op||'add';
+    function build(){
+      clearGroup(blocks,scene);
+      const aBlocks=[],bBlocks=[];
+      // Group A (left)
+      for(let i=0;i<Math.min(a,50);i++){
+        const g=new THREE.BoxGeometry(.7,.7,.7);
+        const m=new THREE.Mesh(g,new THREE.MeshPhongMaterial({color:cA,transparent:true,opacity:.8}));
+        m.position.set(-2+(i%5)*.8, Math.floor(i/5)*.8+.35, 0);
+        scene.add(m);blocks.push(m);
+      }
+      // Operator symbol
+      const opSpr=mkSprite(op==='add'?'+':op==='sub'?'−':op==='mul'?'×':'÷','#ffd54f',60);
+      opSpr.position.set(1,1.5,0);scene.add(opSpr);blocks.push(opSpr);
+      // Group B (right)
+      for(let i=0;i<Math.min(b,50);i++){
+        const g=new THREE.BoxGeometry(.7,.7,.7);
+        const m=new THREE.Mesh(g,new THREE.MeshPhongMaterial({color:cB,transparent:true,opacity:.8}));
+        m.position.set(3+(i%5)*.8, Math.floor(i/5)*.8+.35, 0);
+        scene.add(m);blocks.push(m);
+      }
+      // Result
+      let res;
+      if(op==='add')res=a+b;else if(op==='sub')res=a-b;else if(op==='mul')res=a*b;else res=b?Math.floor(a/b):0;
+      const eq=mkSprite(`= ${res}`,op==='sub'&&res<0?'#ff5252':'#66bb6a',50);
+      eq.position.set(1,3.2,0);scene.add(eq);blocks.push(eq);
+      document.getElementById('ar-res')&&(document.getElementById('ar-res').textContent=res);
+    }
+    build();
+    return{scene,cam,ctrl,update(){},
+      setA(v){a=v;build()},setB(v){b=v;build()},setOp(o){op=o;build()},
+      panel:`<h2>${cfg.op==='mul'?'✖️ Multiplication':cfg.op==='div'?'➗ Division':'➕ Arithmetic'}</h2>
+        <div class="desc-box">See operations as block groups combining or separating.</div>
+        <div class="btn-row">
+          <button class="btn ${op==='add'?'active':''}" data-op="add">+ Add</button>
+          <button class="btn ${op==='sub'?'active':''}" data-op="sub">− Sub</button>
+          <button class="btn ${op==='mul'?'active':''}" data-op="mul">× Mul</button>
+          <button class="btn ${op==='div'?'active':''}" data-op="div">÷ Div</button>
+        </div>
+        <div class="cg"><label>First Number (a) <span class="val" id="ar-a-val">3</span></label>
+        <input type="range" id="ar-a" min="0" max="20" value="3"></div>
+        <div class="cg"><label>Second Number (b) <span class="val" id="ar-b-val">2</span></label>
+        <input type="range" id="ar-b" min="0" max="20" value="2"></div>
+        <hr class="sep">
+        <div class="stat"><div class="s-label">Result</div><div class="s-val" id="ar-res">5</div></div>`,
+      bind(){
+        document.querySelectorAll('[data-op]').forEach(b=>b.onclick=()=>{
+          document.querySelectorAll('[data-op]').forEach(x=>x.classList.remove('active'));
+          b.classList.add('active');this.setOp(b.dataset.op);});
+        const sa=document.getElementById('ar-a'),sb=document.getElementById('ar-b');
+        if(sa)sa.oninput=()=>{document.getElementById('ar-a-val').textContent=sa.value;this.setA(+sa.value)};
+        if(sb)sb.oninput=()=>{document.getElementById('ar-b-val').textContent=sb.value;this.setB(+sb.value)};
+      }
+    };
+  }
+};
+
+// ── 2D SHAPES ──────────────────────────────────────────────
+ENGINES.shapes2d = {
+  init(cfg){
+    const {scene,cam,ctrl}=mkScene([0,0,7]);cam.position.set(0,0,7);
+    let objs=[];let current='circle';
+    const mat=new THREE.MeshPhongMaterial({color:0x4fc3f7,transparent:true,opacity:.6,side:THREE.DoubleSide});
+    const edgeMat=new THREE.LineBasicMaterial({color:0xff7043});
+    function build(shape){
+      clearGroup(objs,scene);current=shape;let geo;
+      switch(shape){
+        case 'circle':geo=new THREE.CircleGeometry(2,64);break;
+        case 'square':geo=new THREE.PlaneGeometry(3,3);break;
+        case 'triangle':geo=new THREE.BufferGeometry();
+          const v=new Float32Array([-1.5,-1.3,0, 1.5,-1.3,0, 0,1.5,0]);
+          geo.setAttribute('position',new THREE.BufferAttribute(v,3));geo.computeVertexNormals();break;
+        case 'rectangle':geo=new THREE.PlaneGeometry(4,2.5);break;
+        case 'oval':geo=new THREE.CircleGeometry(1,64);break;
+        case 'quadrilateral':geo=new THREE.BufferGeometry();
+          const q=new Float32Array([-2,-1.5,0, 2,-1.5,0, 1.5,1.5,0, -2,-1.5,0, 1.5,1.5,0, -1,1.5,0]);
+          geo.setAttribute('position',new THREE.BufferAttribute(q,3));geo.computeVertexNormals();break;
+        default:geo=new THREE.CircleGeometry(2,64);
+      }
+      const m=new THREE.Mesh(geo,mat);
+      if(shape==='oval')m.scale.set(2,1.3,1);
+      scene.add(m);objs.push(m);
+      const edge=new THREE.LineSegments(new THREE.EdgesGeometry(geo),edgeMat);
+      if(shape==='oval')edge.scale.set(2,1.3,1);
+      scene.add(edge);objs.push(edge);
+      const lbl=mkSprite(shape.charAt(0).toUpperCase()+shape.slice(1),'#ffd54f',36);
+      lbl.position.set(0,-2.5,0);scene.add(lbl);objs.push(lbl);
+    }
+    build(current);
+    const shapes=cfg.shapes||['circle','square','triangle','rectangle'];
+    return{scene,cam,ctrl,update(){},
+      panel:`<h2>🔷 2D Shapes</h2>
+        <div class="desc-box">Explore flat shapes — tap to switch between them. Drag to rotate into 3D view.</div>
+        <div class="btn-row">${shapes.map(s=>`<button class="btn ${s===current?'active':''}" data-sh="${s}">${s.charAt(0).toUpperCase()+s.slice(1)}</button>`).join('')}</div>
+        <div class="stat"><div class="s-label">Current Shape</div><div class="s-val" id="sh2d-name">Circle</div></div>`,
+      bind(){
+        document.querySelectorAll('[data-sh]').forEach(b=>b.onclick=()=>{
+          document.querySelectorAll('[data-sh]').forEach(x=>x.classList.remove('active'));
+          b.classList.add('active');build(b.dataset.sh);
+          document.getElementById('sh2d-name').textContent=b.dataset.sh.charAt(0).toUpperCase()+b.dataset.sh.slice(1);});
+      }
+    };
+  }
+};
+
+// ── 3D SHAPES ──────────────────────────────────────────────
+ENGINES.shapes3d = {
+  init(cfg){
+    const {scene,cam,ctrl}=mkScene([4,3,5]);mkGrid(scene);
+    let mesh=null,edges=null,shapeType='cube',scale=1,wire=false,showEdge=false;
+    const mat=new THREE.MeshPhongMaterial({color:0x4fc3f7,transparent:true,opacity:.7,side:THREE.DoubleSide});
+    const matW=new THREE.MeshPhongMaterial({color:0x4fc3f7,wireframe:true,transparent:true,opacity:.9});
+    const edgeMat=new THREE.LineBasicMaterial({color:0xff7043});
+    function geo(t,s){
+      switch(t){case 'cube':return new THREE.BoxGeometry(s,s,s);case 'cuboid':return new THREE.BoxGeometry(s*1.5,s,s*.7);
+        case 'sphere':return new THREE.SphereGeometry(s/2,32,32);case 'cylinder':return new THREE.CylinderGeometry(s/2,s/2,s,32);
+        case 'cone':return new THREE.ConeGeometry(s/2,s,32);case 'prism':return new THREE.CylinderGeometry(s/2,s/2,s,3);
+        case 'hemisphere':const g=new THREE.SphereGeometry(s/2,32,32,0,Math.PI*2,0,Math.PI/2);return g;
+        case 'frustum':return new THREE.CylinderGeometry(s*.3,s/2,s,32);
+        default:return new THREE.BoxGeometry(s,s,s);}
+    }
+    function stats(t,s){
+      const r=s/2;let sa=0,vol=0;
+      switch(t){case'cube':sa=6*s*s;vol=s**3;break;case'cuboid':{const a=s*1.5,b=s,c=s*.7;sa=2*(a*b+b*c+a*c);vol=a*b*c;break;}
+        case'sphere':sa=4*Math.PI*r*r;vol=4/3*Math.PI*r**3;break;
+        case'cylinder':sa=2*Math.PI*r*(r+s);vol=Math.PI*r*r*s;break;
+        case'cone':{const sl=Math.sqrt(r*r+s*s);sa=Math.PI*r*(r+sl);vol=Math.PI*r*r*s/3;break;}
+        case'hemisphere':sa=3*Math.PI*r*r;vol=2/3*Math.PI*r**3;break;
+        case'frustum':{const R=s/2,rr=s*.3,sl=Math.sqrt((R-rr)**2+s*s);sa=Math.PI*(R+rr)*sl+Math.PI*R*R+Math.PI*rr*rr;vol=Math.PI*s/3*(R*R+rr*rr+R*rr);break;}
+        default:sa=6*s*s;vol=s**3;}
+      return{sa:sa.toFixed(2),vol:vol.toFixed(2)};
+    }
+    function build(){
+      if(mesh){scene.remove(mesh);mesh.geometry.dispose();}
+      if(edges){scene.remove(edges);edges.geometry.dispose();}
+      const g=geo(shapeType,scale);
+      mesh=new THREE.Mesh(g,wire?matW:mat);mesh.position.y=scale/2+.01;scene.add(mesh);
+      if(showEdge&&!wire){edges=new THREE.LineSegments(new THREE.EdgesGeometry(g),edgeMat);edges.position.copy(mesh.position);scene.add(edges);}
+      const st=stats(shapeType,scale);
+      const saEl=document.getElementById('s3-sa'),volEl=document.getElementById('s3-vol');
+      if(saEl)saEl.textContent=st.sa;if(volEl)volEl.textContent=st.vol;
+    }
+    build();
+    const shapes=cfg.shapes||['cube','cuboid','sphere','cylinder','cone'];
+    return{scene,cam,ctrl,update(){},
+      panel:`<h2>📦 3D Shapes</h2>
+        <div class="desc-box">Rotate to explore. Toggle wireframe to see internal structure.</div>
+        <div class="btn-row">${shapes.map(s=>`<button class="btn ${s==='cube'?'active':''}" data-s3="${s}">${s.charAt(0).toUpperCase()+s.slice(1)}</button>`).join('')}</div>
+        <div class="cg"><label>Scale <span class="val" id="s3-sc-v">1.0</span></label>
+        <input type="range" id="s3-sc" min="0.3" max="4" step="0.1" value="1"></div>
+        <div class="tog-row"><label>Wireframe</label><label class="tog"><input type="checkbox" id="s3-w"><span class="sl"></span></label></div>
+        <div class="tog-row"><label>Edge Highlight</label><label class="tog"><input type="checkbox" id="s3-e"><span class="sl"></span></label></div>
+        <hr class="sep"><h3>Measurements</h3>
+        <div class="stat-grid">
+          <div class="stat"><div class="s-label">Surface Area</div><div class="s-val" id="s3-sa">6.00</div></div>
+          <div class="stat"><div class="s-label">Volume</div><div class="s-val" id="s3-vol">1.00</div></div>
+        </div>`,
+      bind(){
+        document.querySelectorAll('[data-s3]').forEach(b=>b.onclick=()=>{
+          document.querySelectorAll('[data-s3]').forEach(x=>x.classList.remove('active'));
+          b.classList.add('active');shapeType=b.dataset.s3;build();});
+        const sc=document.getElementById('s3-sc');if(sc)sc.oninput=()=>{scale=+sc.value;document.getElementById('s3-sc-v').textContent=scale.toFixed(1);build();};
+        const w=document.getElementById('s3-w');if(w)w.onchange=()=>{wire=w.checked;build();};
+        const e=document.getElementById('s3-e');if(e)e.onchange=()=>{showEdge=e.checked;build();};
+      }
+    };
+  }
+};
+
+// ── SOLIDS (SA & VOLUME) ───────────────────────────────────
+ENGINES.solids = ENGINES.shapes3d; // reuse with same engine
+
+// ── NUMBER LINE ────────────────────────────────────────────
+ENGINES.numberline = {
+  init(cfg){
+    const {scene,cam,ctrl}=mkScene([0,2,8]);cam.position.set(0,1,8);
+    let objs=[],minV=-5,maxV=5,points=[];
+    function build(){
+      clearGroup(objs,scene);
+      // Main line
+      const lm=new THREE.LineBasicMaterial({color:0x4fc3f7});
+      scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(minV-1,0,0),new THREE.Vector3(maxV+1,0,0)]),lm));
+      objs.push(scene.children[scene.children.length-1]);
+      // Arrow heads
+      const arr=new THREE.ConeGeometry(.12,.3,8);
+      const am=new THREE.MeshPhongMaterial({color:0x4fc3f7});
+      const a1=new THREE.Mesh(arr,am);a1.position.set(maxV+1,0,0);a1.rotation.z=-Math.PI/2;scene.add(a1);objs.push(a1);
+      const a2=new THREE.Mesh(arr.clone(),am);a2.position.set(minV-1,0,0);a2.rotation.z=Math.PI/2;scene.add(a2);objs.push(a2);
+      // Ticks
+      for(let i=minV;i<=maxV;i++){
+        const tick=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(i,-.15,0),new THREE.Vector3(i,.15,0)]),new THREE.LineBasicMaterial({color:0x888}));
+        scene.add(tick);objs.push(tick);
+        const s=mkSprite(String(i),i===0?'#ffd54f':'#aaa',30);s.position.set(i,-.45,0);scene.add(s);objs.push(s);
+      }
+      // Zero highlight
+      const zg=new THREE.SphereGeometry(.08,16,16);
+      const zm=new THREE.Mesh(zg,new THREE.MeshPhongMaterial({color:0xffd54f,emissive:0xffd54f,emissiveIntensity:.5}));
+      zm.position.set(0,0,0);scene.add(zm);objs.push(zm);
+      // Plot stored points
+      points.forEach(p=>{
+        const pg=new THREE.SphereGeometry(.1,16,16);
+        const pm=new THREE.Mesh(pg,new THREE.MeshPhongMaterial({color:0xff7043,emissive:0xff7043,emissiveIntensity:.4}));
+        pm.position.set(p,0,0);scene.add(pm);objs.push(pm);
+        const lbl=mkSprite(String(p),'#ff7043',28);lbl.position.set(p,.4,0);scene.add(lbl);objs.push(lbl);
+      });
+    }
+    build();
+    return{scene,cam,ctrl,update(){},
+      panel:`<h2>↔️ Number Line</h2>
+        <div class="desc-box">${cfg.type==='real'?'Real number line — plot rationals and irrationals':cfg.type==='rational'?'Rational numbers on the number line':cfg.type==='integer'?'Integers: positive and negative whole numbers':'Whole numbers on the number line'}</div>
+        <div class="cg"><label>Range Min</label><input type="number" id="nl-min" value="${minV}"></div>
+        <div class="cg"><label>Range Max</label><input type="number" id="nl-max" value="${maxV}"></div>
+        <button class="btn" id="nl-range" style="width:100%;margin-bottom:10px">Set Range</button>
+        <hr class="sep">
+        <div class="cg"><label>Plot a Point</label><input type="number" id="nl-pt" value="0" step="${cfg.type==='rational'||cfg.type==='real'?'0.1':'1'}"></div>
+        <button class="btn" id="nl-add" style="width:100%;margin-bottom:8px">Plot Point</button>
+        <button class="btn" id="nl-clear" style="width:100%">Clear Points</button>`,
+      bind(){
+        document.getElementById('nl-range').onclick=()=>{minV=+document.getElementById('nl-min').value;maxV=+document.getElementById('nl-max').value;build();};
+        document.getElementById('nl-add').onclick=()=>{points.push(+document.getElementById('nl-pt').value);build();};
+        document.getElementById('nl-clear').onclick=()=>{points=[];build();};
+      }
+    };
+  }
+};
+
+// ── FRACTIONS ──────────────────────────────────────────────
+ENGINES.fractions = {
+  init(cfg){
+    const {scene,cam,ctrl}=mkScene([0,3,5]);cam.position.set(0,2,5);
+    let objs=[];let num=1,den=4;
+    const colors=[0x4fc3f7,0x66bb6a,0xff7043,0xab47bc,0xffd54f,0xff5252,0x26c6da,0xffa726];
+    function build(){
+      clearGroup(objs,scene);
+      const n=Math.max(1,Math.min(den,24)),fill=Math.min(num,n);
+      const angleStep=Math.PI*2/n;
+      for(let i=0;i<n;i++){
+        const shape=new THREE.CylinderGeometry(1.8,1.8,.4,32,1,false,i*angleStep,angleStep*.95);
+        const col=i<fill?colors[i%colors.length]:0x333;
+        const mat=new THREE.MeshPhongMaterial({color:col,transparent:true,opacity:i<fill?.8:.3,side:THREE.DoubleSide});
+        const m=new THREE.Mesh(shape,mat);scene.add(m);objs.push(m);
+        const edge=new THREE.LineSegments(new THREE.EdgesGeometry(shape),new THREE.LineBasicMaterial({color:0xffffff,transparent:true,opacity:.15}));
+        scene.add(edge);objs.push(edge);
+      }
+      // Label
+      const lbl=mkSprite(`${fill}/${n}`,'#ffd54f',56);lbl.position.set(0,-1.5,0);scene.add(lbl);objs.push(lbl);
+      const dec=mkSprite(`= ${(fill/n).toFixed(4)}`,'#66bb6a',36);dec.position.set(0,-2.2,0);scene.add(dec);objs.push(dec);
+      const pct=mkSprite(`= ${(fill/n*100).toFixed(1)}%`,'#4fc3f7',32);pct.position.set(0,-2.8,0);scene.add(pct);objs.push(pct);
+    }
+    build();
+    return{scene,cam,ctrl,update(){},
+      panel:`<h2>🥧 Fractions</h2>
+        <div class="desc-box">${cfg.mode==='decimal'?'Decimals as fractions of powers of 10':cfg.mode==='percent'?'Percentage = parts per hundred':cfg.mode==='ratio'?'Ratio compares two quantities':'See fractions as slices of a circle. Coloured parts = numerator.'}</div>
+        <div class="cg"><label>Numerator <span class="val" id="fr-n-v">${num}</span></label>
+        <input type="range" id="fr-n" min="0" max="24" value="${num}"></div>
+        <div class="cg"><label>Denominator <span class="val" id="fr-d-v">${den}</span></label>
+        <input type="range" id="fr-d" min="1" max="24" value="${den}"></div>
+        <hr class="sep">
+        <div class="stat-grid">
+          <div class="stat"><div class="s-label">Fraction</div><div class="s-val" id="fr-frac">${num}/${den}</div></div>
+          <div class="stat"><div class="s-label">Decimal</div><div class="s-val" id="fr-dec">${(num/den).toFixed(4)}</div></div>
+        </div>
+        <div class="stat"><div class="s-label">Percentage</div><div class="s-val" id="fr-pct">${(num/den*100).toFixed(1)}%</div></div>`,
+      bind(){
+        const sn=document.getElementById('fr-n'),sd=document.getElementById('fr-d');
+        function upd(){num=+sn.value;den=+sd.value;build();
+          document.getElementById('fr-n-v').textContent=num;document.getElementById('fr-d-v').textContent=den;
+          document.getElementById('fr-frac').textContent=`${num}/${den}`;
+          document.getElementById('fr-dec').textContent=(num/den).toFixed(4);
+          document.getElementById('fr-pct').textContent=(num/den*100).toFixed(1)+'%';}
+        if(sn)sn.oninput=upd;if(sd)sd.oninput=upd;
+      }
+    };
+  }
+};
+
+// ── CLOCK ──────────────────────────────────────────────────
+ENGINES.clock = {
+  init(cfg){
+    const {scene,cam,ctrl}=mkScene([0,0,6]);cam.position.set(0,0,6);
+    // Face
+    const face=new THREE.Mesh(new THREE.CircleGeometry(2.2,64),new THREE.MeshPhongMaterial({color:0x1e2137,side:THREE.DoubleSide}));
+    scene.add(face);
+    const rim=new THREE.LineSegments(new THREE.EdgesGeometry(new THREE.RingGeometry(2.15,2.25,64)),new THREE.LineBasicMaterial({color:0x4fc3f7}));
+    scene.add(rim);
+    // Hour marks & numbers
+    for(let i=1;i<=12;i++){
+      const a=i*Math.PI/6-Math.PI/2;
+      const tick=new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(Math.cos(a)*1.85,Math.sin(a)*1.85,.01),
+        new THREE.Vector3(Math.cos(a)*2.05,Math.sin(a)*2.05,.01)
+      ]),new THREE.LineBasicMaterial({color:0x4fc3f7}));
+      scene.add(tick);
+      const s=mkSprite(String(i),'#e0e0e0',28);
+      s.position.set(Math.cos(a)*1.6,Math.sin(a)*1.6,.02);scene.add(s);
+    }
+    // Hands
+    const hrGeo=new THREE.PlaneGeometry(.06,1.2);
+    const hrMat=new THREE.MeshBasicMaterial({color:0xff7043,side:THREE.DoubleSide});
+    const hrHand=new THREE.Mesh(hrGeo,hrMat);hrHand.position.z=.03;
+    hrHand.geometry.translate(0,.6,0);scene.add(hrHand);
+    const mnGeo=new THREE.PlaneGeometry(.04,1.6);
+    const mnMat=new THREE.MeshBasicMaterial({color:0x66bb6a,side:THREE.DoubleSide});
+    const mnHand=new THREE.Mesh(mnGeo,mnMat);mnHand.position.z=.04;
+    mnHand.geometry.translate(0,.8,0);scene.add(mnHand);
+    // Center dot
+    scene.add(new THREE.Mesh(new THREE.CircleGeometry(.08,16),new THREE.MeshBasicMaterial({color:0xffd54f})));
+    let hr=10,mn=10;
+    function setTime(h,m){
+      hr=h;mn=m;
+      const mAngle=-m*Math.PI/30+Math.PI/2;
+      mnHand.rotation.z=mAngle-Math.PI/2;
+      const hAngle=-(h%12+m/60)*Math.PI/6+Math.PI/2;
+      hrHand.rotation.z=hAngle-Math.PI/2;
+    }
+    setTime(hr,mn);
+    return{scene,cam,ctrl,update(){},
+      panel:`<h2>🕐 Clock</h2>
+        <div class="desc-box">Set the hour and minute hands to practice telling time.</div>
+        <div class="cg"><label>Hour <span class="val" id="ck-h-v">10</span></label>
+        <input type="range" id="ck-h" min="1" max="12" value="10"></div>
+        <div class="cg"><label>Minute <span class="val" id="ck-m-v">10</span></label>
+        <input type="range" id="ck-m" min="0" max="59" value="10"></div>
+        <hr class="sep">
+        <div class="stat"><div class="s-label">Time</div><div class="s-val" id="ck-time">10:10</div></div>`,
+      bind(){
+        const sh=document.getElementById('ck-h'),sm=document.getElementById('ck-m');
+        function upd(){setTime(+sh.value,+sm.value);
+          document.getElementById('ck-h-v').textContent=sh.value;
+          document.getElementById('ck-m-v').textContent=sm.value;
+          document.getElementById('ck-time').textContent=`${sh.value}:${sm.value.toString().padStart(2,'0')}`;}
+        if(sh)sh.oninput=upd;if(sm)sm.oninput=upd;
+      }
+    };
+  }
+};
+
+// ── MEASUREMENT ────────────────────────────────────────────
+ENGINES.measurement = {
+  init(cfg){
+    const {scene,cam,ctrl}=mkScene([0,3,6]);
+    let objs=[];let lenA=3,lenB=5;
+    function build(){
+      clearGroup(objs,scene);
+      // Bar A
+      const gA=new THREE.BoxGeometry(lenA,.5,.5);
+      const mA=new THREE.Mesh(gA,new THREE.MeshPhongMaterial({color:0x4fc3f7,transparent:true,opacity:.8}));
+      mA.position.set(lenA/2-3,.5,0);scene.add(mA);objs.push(mA);
+      const lA=mkSprite(`A = ${lenA} units`,'#4fc3f7',30);lA.position.set(lenA/2-3,1.2,0);scene.add(lA);objs.push(lA);
+      // Bar B
+      const gB=new THREE.BoxGeometry(lenB,.5,.5);
+      const mB=new THREE.Mesh(gB,new THREE.MeshPhongMaterial({color:0xff7043,transparent:true,opacity:.8}));
+      mB.position.set(lenB/2-3,-.8,0);scene.add(mB);objs.push(mB);
+      const lB=mkSprite(`B = ${lenB} units`,'#ff7043',30);lB.position.set(lenB/2-3,-1.6,0);scene.add(lB);objs.push(lB);
+      // Comparison
+      const cmp=lenA>lenB?'A > B':lenA<lenB?'A < B':'A = B';
+      const cl=mkSprite(cmp,'#ffd54f',42);cl.position.set(0,2.2,0);scene.add(cl);objs.push(cl);
+    }
+    build();
+    return{scene,cam,ctrl,update(){},
+      panel:`<h2>📏 Measurement</h2>
+        <div class="desc-box">Compare lengths visually. Which bar is longer?</div>
+        <div class="cg"><label>Length A <span class="val" id="ms-a-v">3</span></label>
+        <input type="range" id="ms-a" min="1" max="8" step="0.5" value="3"></div>
+        <div class="cg"><label>Length B <span class="val" id="ms-b-v">5</span></label>
+        <input type="range" id="ms-b" min="1" max="8" step="0.5" value="5"></div>
+        <div class="stat"><div class="s-label">Comparison</div><div class="s-val" id="ms-cmp">A < B</div></div>`,
+      bind(){
+        const sa=document.getElementById('ms-a'),sb=document.getElementById('ms-b');
+        function upd(){lenA=+sa.value;lenB=+sb.value;build();
+          document.getElementById('ms-a-v').textContent=lenA;document.getElementById('ms-b-v').textContent=lenB;
+          document.getElementById('ms-cmp').textContent=lenA>lenB?'A > B':lenA<lenB?'A < B':'A = B';}
+        if(sa)sa.oninput=upd;if(sb)sb.oninput=upd;
+      }
+    };
+  }
+};
+
+// ── PATTERNS ───────────────────────────────────────────────
+ENGINES.patterns = {
+  init(cfg){
+    const {scene,cam,ctrl}=mkScene([0,4,10]);
+    let objs=[];let cols=[0x4fc3f7,0xff7043,0x66bb6a,0xab47bc];let count=12;
+    function build(){
+      clearGroup(objs,scene);
+      for(let i=0;i<count;i++){
+        const g=i%3===0?new THREE.SphereGeometry(.4,16,16):i%3===1?new THREE.BoxGeometry(.7,.7,.7):new THREE.ConeGeometry(.35,.7,3);
+        const m=new THREE.Mesh(g,new THREE.MeshPhongMaterial({color:cols[i%cols.length]}));
+        m.position.set((i-count/2)*1.1,.5,0);scene.add(m);objs.push(m);
+      }
+    }
+    build();
+    return{scene,cam,ctrl,update(dt){objs.forEach((m,i)=>{if(m.isMesh)m.rotation.y+=dt*(0.5+i*.1)})},
+      panel:`<h2>🔁 Patterns</h2>
+        <div class="desc-box">${cfg.type==='symmetry'?'Explore line and rotational symmetry':cfg.type==='tessellation'?'See how shapes tile to fill space':'Identify the repeating pattern: sphere → cube → pyramid.'}</div>
+        <div class="cg"><label>Repeat Count <span class="val" id="pt-c-v">12</span></label>
+        <input type="range" id="pt-c" min="3" max="24" value="12"></div>`,
+      bind(){
+        const sc=document.getElementById('pt-c');
+        if(sc)sc.oninput=()=>{count=+sc.value;document.getElementById('pt-c-v').textContent=count;build();};
+      }
+    };
+  }
+};
+
+// ── FACTORS & MULTIPLES ────────────────────────────────────
+ENGINES.factors = {
+  init(cfg){
+    const {scene,cam,ctrl}=mkScene([0,5,10]);
+    let objs=[];let num=12;
+    function build(){
+      clearGroup(objs,scene);
+      const factors=[];for(let i=1;i<=num;i++)if(num%i===0)factors.push(i);
+      factors.forEach((f,idx)=>{
+        const col=f===1||f===num?0xffd54f:0x4fc3f7;
+        const g=new THREE.BoxGeometry(.8,.8,.8);
+        const m=new THREE.Mesh(g,new THREE.MeshPhongMaterial({color:col,transparent:true,opacity:.8}));
+        m.position.set((idx-factors.length/2)*1.2,.5,0);scene.add(m);objs.push(m);
+        const lbl=mkSprite(String(f),'#fff',32);lbl.position.set(m.position.x,1.4,0);scene.add(lbl);objs.push(lbl);
+      });
+      const title=mkSprite(`Factors of ${num}`,'#ffd54f',36);title.position.set(0,3,0);scene.add(title);objs.push(title);
+      const el=document.getElementById('fc-list');if(el)el.textContent=factors.join(', ');
+      const el2=document.getElementById('fc-count');if(el2)el2.textContent=factors.length;
+      const el3=document.getElementById('fc-prime');if(el3)el3.textContent=factors.length===2?'Yes (Prime)':'No (Composite)';
+    }
+    build();
+    return{scene,cam,ctrl,update(){},
+      panel:`<h2>🔗 Factors & Multiples</h2>
+        <div class="desc-box">See all factors of a number as blocks. Prime numbers have exactly 2 factors.</div>
+        <div class="cg"><label>Number <span class="val" id="fc-n-v">12</span></label>
+        <input type="range" id="fc-n" min="2" max="100" value="12"></div>
+        <hr class="sep">
+        <div class="stat"><div class="s-label">Factors</div><div class="s-val" id="fc-list">1, 2, 3, 4, 6, 12</div></div>
+        <div class="stat-grid">
+          <div class="stat"><div class="s-label">Count</div><div class="s-val" id="fc-count">6</div></div>
+          <div class="stat"><div class="s-label">Prime?</div><div class="s-val" id="fc-prime">No (Composite)</div></div>
+        </div>`,
+      bind(){
+        const sl=document.getElementById('fc-n');
+        if(sl)sl.oninput=()=>{num=+sl.value;document.getElementById('fc-n-v').textContent=num;build();};
+      }
+    };
+  }
+};
+
+// ── ANGLES ─────────────────────────────────────────────────
+ENGINES.angles = {
+  init(cfg){
+    const {scene,cam,ctrl}=mkScene([0,0,7]);cam.position.set(0,0,7);
+    let objs=[];let angle=45;
+    function build(){
+      clearGroup(objs,scene);
+      const rad=angle*Math.PI/180;
+      // Ray 1 (fixed along +x)
+      const r1=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0),new THREE.Vector3(3,0,.01)]),new THREE.LineBasicMaterial({color:0x4fc3f7}));
+      scene.add(r1);objs.push(r1);
+      // Ray 2 (rotated)
+      const r2=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0),new THREE.Vector3(Math.cos(rad)*3,Math.sin(rad)*3,.01)]),new THREE.LineBasicMaterial({color:0xff7043}));
+      scene.add(r2);objs.push(r2);
+      // Arc
+      const pts=[];for(let i=0;i<=40;i++){const t=i/40*rad;pts.push(new THREE.Vector3(Math.cos(t)*.8,Math.sin(t)*.8,.01));}
+      const arc=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:0xab47bc}));
+      scene.add(arc);objs.push(arc);
+      // Fill
+      const shape=new THREE.Shape();shape.moveTo(0,0);
+      for(let i=0;i<=40;i++){const t=i/40*rad;shape.lineTo(Math.cos(t)*1.5,Math.sin(t)*1.5);}
+      shape.lineTo(0,0);
+      const fillGeo=new THREE.ShapeGeometry(shape);
+      const fill=new THREE.Mesh(fillGeo,new THREE.MeshBasicMaterial({color:0xab47bc,transparent:true,opacity:.15,side:THREE.DoubleSide}));
+      fill.position.z=.005;scene.add(fill);objs.push(fill);
+      // Label
+      const lbl=mkSprite(`${angle}°`,'#ffd54f',44);
+      const mid=rad/2;lbl.position.set(Math.cos(mid)*1.6,Math.sin(mid)*1.6,.02);scene.add(lbl);objs.push(lbl);
+      // Type
+      let type='';
+      if(angle<90)type='Acute';else if(angle===90)type='Right';else if(angle<180)type='Obtuse';else if(angle===180)type='Straight';else type='Reflex';
+      const typeEl=document.getElementById('ag-type');if(typeEl)typeEl.textContent=type;
+    }
+    build();
+    return{scene,cam,ctrl,update(){},
+      panel:`<h2>📐 Angles</h2>
+        <div class="desc-box">Drag the slider to change the angle. See how the type changes.</div>
+        <div class="cg"><label>Angle <span class="val" id="ag-v">${angle}°</span></label>
+        <input type="range" id="ag-sl" min="1" max="359" value="${angle}"></div>
+        <hr class="sep">
+        <div class="stat-grid">
+          <div class="stat"><div class="s-label">Angle</div><div class="s-val" id="ag-deg">${angle}°</div></div>
+          <div class="stat"><div class="s-label">Type</div><div class="s-val" id="ag-type">Acute</div></div>
+        </div>
+        <div class="stat"><div class="s-label">Complement</div><div class="s-val" id="ag-comp">${90-angle}°</div></div>
+        <div class="stat"><div class="s-label">Supplement</div><div class="s-val" id="ag-supp">${180-angle}°</div></div>`,
+      bind(){
+        const sl=document.getElementById('ag-sl');
+        if(sl)sl.oninput=()=>{angle=+sl.value;build();
+          document.getElementById('ag-v').textContent=angle+'°';
+          document.getElementById('ag-deg').textContent=angle+'°';
+          document.getElementById('ag-comp').textContent=(90-angle)+'°';
+          document.getElementById('ag-supp').textContent=(180-angle)+'°';};
+      }
+    };
+  }
+};
+
+// ── TRIANGLES ──────────────────────────────────────────────
+ENGINES.triangles = {
+  init(cfg){
+    const {scene,cam,ctrl}=mkScene([0,0,7]);cam.position.set(0,0,7);
+    let objs=[];let ax=0,ay=-1.5,bx=3,by=-1.5,cx=1.5,cy=1.5;
+    function dist(x1,y1,x2,y2){return Math.sqrt((x2-x1)**2+(y2-y1)**2)}
+    function build(){
+      clearGroup(objs,scene);
+      // Triangle fill
+      const shape=new THREE.Shape();shape.moveTo(ax,ay);shape.lineTo(bx,by);shape.lineTo(cx,cy);shape.lineTo(ax,ay);
+      const geo=new THREE.ShapeGeometry(shape);
+      const m=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:0x4fc3f7,transparent:true,opacity:.2,side:THREE.DoubleSide}));
+      m.position.z=-.01;scene.add(m);objs.push(m);
+      // Edges
+      const pts=[new THREE.Vector3(ax,ay,.01),new THREE.Vector3(bx,by,.01),new THREE.Vector3(cx,cy,.01),new THREE.Vector3(ax,ay,.01)];
+      const edge=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:0x4fc3f7}));
+      scene.add(edge);objs.push(edge);
+      // Vertices
+      [[ax,ay,'A'],[bx,by,'B'],[cx,cy,'C']].forEach(([x,y,l])=>{
+        const dot=new THREE.Mesh(new THREE.CircleGeometry(.08,16),new THREE.MeshBasicMaterial({color:0xff7043}));
+        dot.position.set(x,y,.02);scene.add(dot);objs.push(dot);
+        const lbl=mkSprite(l,'#ff7043',32);lbl.position.set(x+(x<1.5?-.4:.4),y+(y<0?-.4:.4),.02);scene.add(lbl);objs.push(lbl);
+      });
+      // Side lengths
+      const a=dist(bx,by,cx,cy),b=dist(ax,ay,cx,cy),c=dist(ax,ay,bx,by);
+      const s=(a+b+c)/2;const area=Math.sqrt(Math.max(0,s*(s-a)*(s-b)*(s-c)));
+      const saEl=document.getElementById('tr-a'),sbEl=document.getElementById('tr-b'),scEl=document.getElementById('tr-c');
+      if(saEl)saEl.textContent=a.toFixed(2);if(sbEl)sbEl.textContent=b.toFixed(2);if(scEl)scEl.textContent=c.toFixed(2);
+      const arEl=document.getElementById('tr-area');if(arEl)arEl.textContent=area.toFixed(2);
+      const prEl=document.getElementById('tr-peri');if(prEl)prEl.textContent=(a+b+c).toFixed(2);
+    }
+    build();
+    return{scene,cam,ctrl,update(){},
+      panel:`<h2>🔺 Triangles</h2>
+        <div class="desc-box">${cfg.mode==='heron'?"Heron's formula: Area = √[s(s-a)(s-b)(s-c)]":'Adjust vertices to explore triangle properties.'}</div>
+        <div class="cg"><label>Vertex C — X <span class="val" id="tr-cx-v">1.5</span></label>
+        <input type="range" id="tr-cx" min="-3" max="4" step="0.1" value="1.5"></div>
+        <div class="cg"><label>Vertex C — Y <span class="val" id="tr-cy-v">1.5</span></label>
+        <input type="range" id="tr-cy" min="-1" max="4" step="0.1" value="1.5"></div>
+        <div class="cg"><label>Base Width <span class="val" id="tr-bw-v">3</span></label>
+        <input type="range" id="tr-bw" min="0.5" max="5" step="0.1" value="3"></div>
+        <hr class="sep"><h3>Sides</h3>
+        <div class="stat-grid">
+          <div class="stat"><div class="s-label">a (BC)</div><div class="s-val" id="tr-a">3.35</div></div>
+          <div class="stat"><div class="s-label">b (AC)</div><div class="s-val" id="tr-b">3.35</div></div>
+        </div>
+        <div class="stat"><div class="s-label">c (AB)</div><div class="s-val" id="tr-c">3.00</div></div>
+        <hr class="sep"><h3>Properties</h3>
+        <div class="stat-grid">
+          <div class="stat"><div class="s-label">Area</div><div class="s-val" id="tr-area">4.50</div></div>
+          <div class="stat"><div class="s-label">Perimeter</div><div class="s-val" id="tr-peri">9.70</div></div>
+        </div>`,
+      bind(){
+        const sx=document.getElementById('tr-cx'),sy=document.getElementById('tr-cy'),sb=document.getElementById('tr-bw');
+        function upd(){cx=+sx.value;cy=+sy.value;bx=+sb.value;build();
+          document.getElementById('tr-cx-v').textContent=cx;document.getElementById('tr-cy-v').textContent=cy;
+          document.getElementById('tr-bw-v').textContent=bx;}
+        if(sx)sx.oninput=upd;if(sy)sy.oninput=upd;if(sb)sb.oninput=upd;
+      }
+    };
+  }
+};
+
+// ── CIRCLES ────────────────────────────────────────────────
+ENGINES.circles = {
+  init(cfg){
+    const {scene,cam,ctrl}=mkScene([0,0,7]);cam.position.set(0,0,7);
+    let objs=[];let radius=2,showTangent=false,showChord=false,sectorAngle=90;
+    function build(){
+      clearGroup(objs,scene);
+      // Circle
+      const circ=new THREE.Line(new THREE.BufferGeometry().setFromPoints(
+        Array.from({length:129},(_,i)=>{const a=i/128*Math.PI*2;return new THREE.Vector3(Math.cos(a)*radius,Math.sin(a)*radius,.01)})
+      ),new THREE.LineBasicMaterial({color:0x4fc3f7}));
+      scene.add(circ);objs.push(circ);
+      // Center
+      const center=new THREE.Mesh(new THREE.CircleGeometry(.06,16),new THREE.MeshBasicMaterial({color:0xffd54f}));
+      center.position.z=.02;scene.add(center);objs.push(center);
+      // Radius line
+      const rl=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,.02),new THREE.Vector3(radius,0,.02)]),new THREE.LineBasicMaterial({color:0xff7043}));
+      scene.add(rl);objs.push(rl);
+      const rLbl=mkSprite(`r = ${radius}`,'#ff7043',28);rLbl.position.set(radius/2,.3,.02);scene.add(rLbl);objs.push(rLbl);
+      // Sector
+      if(sectorAngle>0&&sectorAngle<360){
+        const rad=sectorAngle*Math.PI/180;
+        const shape=new THREE.Shape();shape.moveTo(0,0);
+        for(let i=0;i<=40;i++){const t=i/40*rad;shape.lineTo(Math.cos(t)*radius,Math.sin(t)*radius);}
+        shape.lineTo(0,0);
+        const sec=new THREE.Mesh(new THREE.ShapeGeometry(shape),new THREE.MeshBasicMaterial({color:0xab47bc,transparent:true,opacity:.2,side:THREE.DoubleSide}));
+        scene.add(sec);objs.push(sec);
+      }
+      // Tangent
+      if(showTangent){
+        const tp=new THREE.Vector3(radius,0,.02);
+        const t=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(radius,-2.5,.02),new THREE.Vector3(radius,2.5,.02)]),new THREE.LineBasicMaterial({color:0x66bb6a}));
+        scene.add(t);objs.push(t);
+        const tl=mkSprite('tangent','#66bb6a',24);tl.position.set(radius+.5,2,.02);scene.add(tl);objs.push(tl);
+      }
+      // Chord
+      if(showChord){
+        const a1=Math.PI/6,a2=Math.PI*5/6;
+        const ch=new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+          new THREE.Vector3(Math.cos(a1)*radius,Math.sin(a1)*radius,.02),
+          new THREE.Vector3(Math.cos(a2)*radius,Math.sin(a2)*radius,.02)
+        ]),new THREE.LineBasicMaterial({color:0xffd54f}));
+        scene.add(ch);objs.push(ch);
+        const cl=mkSprite('chord','#ffd54f',24);cl.position.set(0,radius*.6,.02);scene.add(cl);objs.push(cl);
+      }
+      // Stats
+      const cEl=document.getElementById('ci-circ');if(cEl)cEl.textContent=(2*Math.PI*radius).toFixed(2);
+      const aEl=document.getElementById('ci-area');if(aEl)aEl.textContent=(Math.PI*radius*radius).toFixed(2);
+      const secEl=document.getElementById('ci-sec');if(secEl)secEl.textContent=(sectorAngle/360*Math.PI*radius*radius).toFixed(2);
+    }
+    build();
+    return{scene,cam,ctrl,update(){},
+      panel:`<h2>⭕ Circles</h2>
+        <div class="desc-box">${cfg.mode==='area'?'Explore sectors, segments and area combinations':cfg.mode==='construct'?'Tangent constructions and properties':'Circle properties — radius, chord, tangent, sector.'}</div>
+        <div class="cg"><label>Radius <span class="val" id="ci-r-v">2</span></label>
+        <input type="range" id="ci-r" min="0.5" max="3" step="0.1" value="2"></div>
+        <div class="cg"><label>Sector Angle <span class="val" id="ci-sa-v">90°</span></label>
+        <input type="range" id="ci-sa" min="0" max="360" value="90"></div>
+        <div class="tog-row"><label>Show Tangent</label><label class="tog"><input type="checkbox" id="ci-tan"><span class="sl"></span></label></div>
+        <div class="tog-row"><label>Show Chord</label><label class="tog"><input type="checkbox" id="ci-ch"><span class="sl"></span></label></div>
+        <hr class="sep"><h3>Measurements</h3>
+        <div class="stat-grid">
+          <div class="stat"><div class="s-label">Circumference</div><div class="s-val" id="ci-circ">${(2*Math.PI*radius).toFixed(2)}</div></div>
+          <div class="stat"><div class="s-label">Area</div><div class="s-val" id="ci-area">${(Math.PI*radius*radius).toFixed(2)}</div></div>
+        </div>
+        <div class="stat"><div class="s-label">Sector Area</div><div class="s-val" id="ci-sec">${(90/360*Math.PI*radius*radius).toFixed(2)}</div></div>`,
+      bind(){
+        const sr=document.getElementById('ci-r'),sa=document.getElementById('ci-sa'),st=document.getElementById('ci-tan'),sc=document.getElementById('ci-ch');
+        function upd(){radius=+sr.value;sectorAngle=+sa.value;showTangent=st.checked;showChord=sc.checked;build();
+          document.getElementById('ci-r-v').textContent=radius.toFixed(1);
+          document.getElementById('ci-sa-v').textContent=sectorAngle+'°';}
+        if(sr)sr.oninput=upd;if(sa)sa.oninput=upd;if(st)st.onchange=upd;if(sc)sc.onchange=upd;
+      }
+    };
+  }
+};
+
+// ── PERIMETER / AREA ───────────────────────────────────────
+ENGINES.perimeter = {
+  init(cfg){
+    const {scene,cam,ctrl}=mkScene([0,0,8]);cam.position.set(0,0,8);
+    let objs=[];let w=4,h=3,shape='rectangle';
+    function build(){
+      clearGroup(objs,scene);
+      let geo,peri=0,area=0;
+      if(shape==='rectangle'||shape==='square'){
+        const sw=shape==='square'?w:w, sh=shape==='square'?w:h;
+        geo=new THREE.PlaneGeometry(sw,sh);
+        peri=2*(sw+sh);area=sw*sh;
+        const lw=mkSprite(`${sw}`,'#ff7043',30);lw.position.set(0,-sh/2-.4,0);scene.add(lw);objs.push(lw);
+        const lh=mkSprite(`${sh}`,'#ff7043',30);lh.position.set(sw/2+.4,0,0);scene.add(lh);objs.push(lh);
+      } else if(shape==='circle'){
+        geo=new THREE.CircleGeometry(w/2,64);
+        peri=Math.PI*w;area=Math.PI*(w/2)**2;
+      } else {
+        geo=new THREE.BufferGeometry();
+        const v=new Float32Array([-w/2,-h/2,0, w/2,-h/2,0, 0,h/2,0]);
+        geo.setAttribute('position',new THREE.BufferAttribute(v,3));geo.computeVertexNormals();
+        peri=w+Math.sqrt((w/2)**2+h**2)*2;area=w*h/2;
+      }
+      const m=new THREE.Mesh(geo,new THREE.MeshBasicMaterial({color:0x4fc3f7,transparent:true,opacity:.25,side:THREE.DoubleSide}));
+      scene.add(m);objs.push(m);
+      const edge=new THREE.LineSegments(new THREE.EdgesGeometry(geo),new THREE.LineBasicMaterial({color:0x4fc3f7}));
+      scene.add(edge);objs.push(edge);
+      const pEl=document.getElementById('pa-peri');if(pEl)pEl.textContent=peri.toFixed(2);
+      const aEl=document.getElementById('pa-area');if(aEl)aEl.textContent=area.toFixed(2);
+    }
+    build();
+    return{scene,cam,ctrl,update(){},
+      panel:`<h2>📐 Perimeter & Area</h2>
+        <div class="desc-box">Adjust dimensions to see how perimeter and area change.</div>
+        <div class="btn-row">
+          <button class="btn active" data-pa="rectangle">Rectangle</button>
+          <button class="btn" data-pa="square">Square</button>
+          <button class="btn" data-pa="triangle">Triangle</button>
+          <button class="btn" data-pa="circle">Circle</button>
+        </div>
+        <div class="cg"><label>Width / Radius <span class="val" id="pa-w-v">4</span></label>
+        <input type="range" id="pa-w" min="1" max="6" step="0.1" value="4"></div>
+        <div class="cg"><label>Height <span class="val" id="pa-h-v">3</span></label>
+        <input type="range" id="pa-h" min="1" max="6" step="0.1" value="3"></div>
+        <hr class="sep">
+        <div class="stat-grid">
+          <div class="stat"><div class="s-label">Perimeter</div><div class="s-val" id="pa-peri">14.00</div></div>
+          <div class="stat"><div class="s-label">Area</div><div class="s-val" id="pa-area">12.00</div></div>
+        </div>`,
+      bind(){
+        document.querySelectorAll('[data-pa]').forEach(b=>b.onclick=()=>{
+          document.querySelectorAll('[data-pa]').forEach(x=>x.classList.remove('active'));
+          b.classList.add('active');shape=b.dataset.pa;build();});
+        const sw=document.getElementById('pa-w'),sh=document.getElementById('pa-h');
+        function upd(){w=+sw.value;h=+sh.value;build();
+          document.getElementById('pa-w-v').textContent=w.toFixed(1);
+          document.getElementById('pa-h-v').textContent=h.toFixed(1);}
+        if(sw)sw.oninput=upd;if(sh)sh.oninput=upd;
+      }
+    };
+  }
+};
+
+// ── COORDINATE GEOMETRY ────────────────────────────────────
+ENGINES.coordinate = {
+  init(cfg){
+    const {scene,cam,ctrl}=mkScene([0,0,12]);cam.position.set(0,0,12);
+    addAxes2D(scene,7);
+    let objs=[];const points=[];
+    function plotPoint(x,y){
+      points.push([x,y]);
+      const dot=new THREE.Mesh(new THREE.CircleGeometry(.12,16),new THREE.MeshBasicMaterial({color:0xff7043}));
+      dot.position.set(x,y,.02);scene.add(dot);objs.push(dot);
+      const lbl=mkSprite(`(${x},${y})`,'#ff7043',24);lbl.position.set(x+.4,y+.3,.02);scene.add(lbl);objs.push(lbl);
+    }
+    function drawLine(x1,y1,x2,y2){
+      // Extend line beyond points
+      const dx=x2-x1,dy=y2-y1,len=Math.sqrt(dx*dx+dy*dy);
+      if(len===0)return;
+      const ex=dx/len*10,ey=dy/len*10;
+      const l=new THREE.Line(new THREE.BufferGeometry().setFromPoints([
+        new THREE.Vector3(x1-ex,y1-ey,.01),new THREE.Vector3(x2+ex,y2+ey,.01)
+      ]),new THREE.LineBasicMaterial({color:0x66bb6a}));
+      scene.add(l);objs.push(l);
+    }
+    return{scene,cam,ctrl,update(){},
+      panel:`<h2>⊹ Coordinate Geometry</h2>
+        <div class="desc-box">${cfg.level>=2?'Distance formula, section formula, area of triangle':'Plot points on the Cartesian plane. Identify quadrants.'}</div>
+        <div class="cg"><label>Point (x, y)</label>
+        <div style="display:flex;gap:4px"><input type="number" id="co-x" value="2" style="width:50%"><input type="number" id="co-y" value="3" style="width:50%"></div></div>
+        <button class="btn" id="co-add" style="width:100%;margin-bottom:8px">Plot Point</button>
+        <hr class="sep">
+        <div class="cg"><label>Line from (x1,y1) to (x2,y2)</label>
+        <div style="display:flex;gap:4px"><input type="number" id="co-lx1" value="0" style="width:25%"><input type="number" id="co-ly1" value="0" style="width:25%"><input type="number" id="co-lx2" value="3" style="width:25%"><input type="number" id="co-ly2" value="2" style="width:25%"></div></div>
+        <button class="btn" id="co-line" style="width:100%;margin-bottom:8px">Draw Line</button>
+        <hr class="sep">
+        ${cfg.level>=2?`<div class="stat"><div class="s-label">Distance</div><div class="s-val" id="co-dist">—</div></div>`:''}
+        <button class="btn" id="co-clear" style="width:100%">Clear All</button>`,
+      bind(){
+        document.getElementById('co-add').onclick=()=>{
+          plotPoint(+document.getElementById('co-x').value,+document.getElementById('co-y').value);
+          if(cfg.level>=2&&points.length>=2){
+            const p1=points[points.length-2],p2=points[points.length-1];
+            const d=Math.sqrt((p2[0]-p1[0])**2+(p2[1]-p1[1])**2);
+            const el=document.getElementById('co-dist');if(el)el.textContent=d.toFixed(3);
+          }
+        };
+        document.getElementById('co-line').onclick=()=>{
+          drawLine(+document.getElementById('co-lx1').value,+document.getElementById('co-ly1').value,
+                   +document.getElementById('co-lx2').value,+document.getElementById('co-ly2').value);};
+        document.getElementById('co-clear').onclick=()=>{clearGroup(objs,scene);points.length=0;};
+      }
+    };
+  }
+};
+
+// ── GRAPH 2D (polynomials, linear, quadratic) ──────────────
+ENGINES.graph2d = {
+  init(cfg){
+    const {scene,cam,ctrl}=mkScene([0,0,14]);cam.position.set(0,0,14);
+    addAxes2D(scene,7);
+    let objs=[];
+    let funcStr=cfg.type==='quadratic'?'x*x - 3*x + 2':cfg.type==='polynomial'?'x*x*x - 3*x':cfg.type==='linear2var'?'2*x + 1':'x';
+    function evalF(x){try{return Function('x',`"use strict";return(${funcStr})`)(x)}catch{return 0}}
+    function plot(){
+      clearGroup(objs,scene);
+      const pts=[];
+      for(let i=-70;i<=70;i++){const x=i/10;const y=evalF(x);if(isFinite(y)&&Math.abs(y)<20)pts.push(new THREE.Vector3(x,y,.01));}
+      if(pts.length>1){
+        const line=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:0xff7043}));
+        scene.add(line);objs.push(line);
+      }
+      // Find zeros approximately
+      const zeros=[];
+      for(let i=-70;i<70;i++){const x1=i/10,x2=(i+1)/10,y1=evalF(x1),y2=evalF(x2);
+        if(isFinite(y1)&&isFinite(y2)&&y1*y2<=0){const z=x1-y1*(x2-x1)/(y2-y1);zeros.push(z);}}
+      const zEl=document.getElementById('g2-zeros');
+      if(zEl)zEl.textContent=zeros.length?zeros.map(z=>z.toFixed(2)).join(', '):'None found';
+      // Mark zeros
+      zeros.forEach(z=>{
+        const dot=new THREE.Mesh(new THREE.CircleGeometry(.1,16),new THREE.MeshBasicMaterial({color:0x66bb6a}));
+        dot.position.set(z,0,.02);scene.add(dot);objs.push(dot);
+      });
+    }
+    plot();
+    return{scene,cam,ctrl,update(){},
+      panel:`<h2>📈 Function Graph</h2>
+        <div class="desc-box">${cfg.type==='quadratic'?'Quadratic: ax² + bx + c. See roots and vertex.':cfg.type==='polynomial'?'Plot polynomials and find zeros.':cfg.type==='linear2var'?'Graph linear equations y = mx + c':'Plot and explore functions.'}</div>
+        <div class="cg"><label>f(x) =</label>
+        <textarea id="g2-func" rows="2">${funcStr}</textarea></div>
+        <div style="font-size:.62rem;color:var(--text-dim);margin:-6px 0 8px">JS syntax: x*x, Math.sin(x), Math.sqrt(x)</div>
+        <button class="btn" id="g2-plot" style="width:100%;margin-bottom:10px">Plot</button>
+        <hr class="sep">
+        <div class="stat"><div class="s-label">Zeros (x-intercepts)</div><div class="s-val" id="g2-zeros">—</div></div>`,
+      bind(){
+        document.getElementById('g2-plot').onclick=()=>{funcStr=document.getElementById('g2-func').value;plot();};
+      }
+    };
+  }
+};
+
+// ── ALGEBRA ────────────────────────────────────────────────
+ENGINES.algebra = {
+  init(cfg){
+    const {scene,cam,ctrl}=mkScene([0,2,8]);
+    let objs=[];let lhs=3,rhs=3;
+    // Balance beam
+    const beam=new THREE.Mesh(new THREE.BoxGeometry(6,.1,.8),new THREE.MeshPhongMaterial({color:0x888}));
+    beam.position.y=2;scene.add(beam);
+    const stand=new THREE.Mesh(new THREE.CylinderGeometry(.15,.25,2,8),new THREE.MeshPhongMaterial({color:0x666}));
+    stand.position.y=1;scene.add(stand);
+    const base=new THREE.Mesh(new THREE.BoxGeometry(2,.15,1),new THREE.MeshPhongMaterial({color:0x555}));
+    scene.add(base);
+
+    function build(){
+      clearGroup(objs,scene);
+      const tilt=(lhs-rhs)*0.05;
+      beam.rotation.z=-tilt;
+      // Left blocks
+      for(let i=0;i<Math.min(lhs,10);i++){
+        const g=new THREE.BoxGeometry(.5,.5,.5);
+        const m=new THREE.Mesh(g,new THREE.MeshPhongMaterial({color:0x4fc3f7,transparent:true,opacity:.8}));
+        m.position.set(-2+(i%5)*.55, 2.3+Math.floor(i/5)*.55, 0);
+        // Apply beam rotation
+        scene.add(m);objs.push(m);
+      }
+      // Right blocks
+      for(let i=0;i<Math.min(rhs,10);i++){
+        const g=new THREE.BoxGeometry(.5,.5,.5);
+        const m=new THREE.Mesh(g,new THREE.MeshPhongMaterial({color:0xff7043,transparent:true,opacity:.8}));
+        m.position.set(1+(i%5)*.55, 2.3+Math.floor(i/5)*.55, 0);
+        scene.add(m);objs.push(m);
+      }
+      // Status
+      const eq=lhs===rhs?'BALANCED ✓':lhs>rhs?'Left heavier':'Right heavier';
+      const col=lhs===rhs?'#66bb6a':'#ff5252';
+      const lbl=mkSprite(eq,col,36);lbl.position.set(0,4.5,0);scene.add(lbl);objs.push(lbl);
+      const eqSpr=mkSprite(`${lhs}  =  ${rhs}`,'#ffd54f',44);eqSpr.position.set(0,3.8,0);scene.add(eqSpr);objs.push(eqSpr);
+      const stEl=document.getElementById('al-status');if(stEl){stEl.textContent=eq;stEl.style.color=col;}
+    }
+    build();
+    return{scene,cam,ctrl,update(){},
+      panel:`<h2>𝑥 Algebra — Balance</h2>
+        <div class="desc-box">${cfg.mode==='identity'?'Algebraic identities: (a+b)², a²-b², etc.':cfg.mode==='factor'?'Factorization using common factors and identities':'An equation is like a balance — both sides must be equal.'}</div>
+        <div class="cg"><label>Left Side <span class="val" id="al-l-v">3</span></label>
+        <input type="range" id="al-l" min="0" max="10" value="3"></div>
+        <div class="cg"><label>Right Side <span class="val" id="al-r-v">3</span></label>
+        <input type="range" id="al-r" min="0" max="10" value="3"></div>
+        <hr class="sep">
+        <div class="stat"><div class="s-label">Status</div><div class="s-val" id="al-status" style="color:#66bb6a">BALANCED ✓</div></div>`,
+      bind(){
+        const sl=document.getElementById('al-l'),sr=document.getElementById('al-r');
+        function upd(){lhs=+sl.value;rhs=+sr.value;build();
+          document.getElementById('al-l-v').textContent=lhs;document.getElementById('al-r-v').textContent=rhs;}
+        if(sl)sl.oninput=upd;if(sr)sr.oninput=upd;
+      }
+    };
+  }
+};
+
+// ── TRIGONOMETRY ───────────────────────────────────────────
+ENGINES.trig = {
+  init(cfg){
+    const {scene,cam,ctrl}=mkScene([3,2,5]);
+    // Unit circle
+    scene.add(new THREE.Mesh(new THREE.RingGeometry(.98,1.02,128),new THREE.MeshBasicMaterial({color:0x4fc3f7,side:THREE.DoubleSide})));
+    const ax=new THREE.LineBasicMaterial({color:0x555});
+    scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-1.5,0,0),new THREE.Vector3(1.5,0,0)]),ax));
+    scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,-1.5,0),new THREE.Vector3(0,1.5,0)]),ax));
+    // Radius, point, sin/cos lines
+    const radGeo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3(1,0,0)]);
+    const radLine=new THREE.Line(radGeo,new THREE.LineBasicMaterial({color:0xff7043}));scene.add(radLine);
+    const pt=new THREE.Mesh(new THREE.SphereGeometry(.05,16,16),new THREE.MeshPhongMaterial({color:0xff7043,emissive:0xff7043,emissiveIntensity:.5}));
+    pt.position.set(1,0,0);scene.add(pt);
+    const sinGeo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(1,0,0),new THREE.Vector3(1,0,0)]);
+    const sinLine=new THREE.Line(sinGeo,new THREE.LineBasicMaterial({color:0x66bb6a}));scene.add(sinLine);
+    const cosGeo=new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(),new THREE.Vector3(1,0,0)]);
+    const cosLine=new THREE.Line(cosGeo,new THREE.LineBasicMaterial({color:0x4fc3f7}));scene.add(cosLine);
+    // Sine wave along Z
+    const wLen=6,wPts=200;
+    const swGeo=new THREE.BufferGeometry();const swPos=new Float32Array(wPts*3);
+    swGeo.setAttribute('position',new THREE.BufferAttribute(swPos,3));
+    const sinWave=new THREE.Line(swGeo,new THREE.LineBasicMaterial({color:0x66bb6a,transparent:true,opacity:.7}));scene.add(sinWave);
+    // Z axis
+    scene.add(new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(0,0,0),new THREE.Vector3(0,0,wLen)]),new THREE.LineBasicMaterial({color:0x555})));
+    let angle=0,autoAnim=true,speed=1,arcMesh=null;
+    function setAngle(a){
+      angle=a;const c=Math.cos(a),s=Math.sin(a);
+      pt.position.set(c,s,0);
+      const rp=radLine.geometry.attributes.position.array;rp[3]=c;rp[4]=s;radLine.geometry.attributes.position.needsUpdate=true;
+      const sp=sinLine.geometry.attributes.position.array;sp[0]=c;sp[1]=0;sp[3]=c;sp[4]=s;sinLine.geometry.attributes.position.needsUpdate=true;
+      const cp=cosLine.geometry.attributes.position.array;cp[3]=c;cosLine.geometry.attributes.position.needsUpdate=true;
+      if(arcMesh){scene.remove(arcMesh);arcMesh.geometry.dispose();}
+      if(Math.abs(a)>.05){const pts=[];for(let i=0;i<=30;i++){const t=i/30*a;pts.push(new THREE.Vector3(Math.cos(t)*.3,Math.sin(t)*.3,0));}
+        arcMesh=new THREE.Line(new THREE.BufferGeometry().setFromPoints(pts),new THREE.LineBasicMaterial({color:0xab47bc}));scene.add(arcMesh);}
+      const sw=sinWave.geometry.attributes.position.array;
+      for(let i=0;i<wPts;i++){const t=i/(wPts-1)*Math.PI*4;sw[i*3]=0;sw[i*3+1]=Math.sin(t+a);sw[i*3+2]=i/(wPts-1)*wLen;}
+      sinWave.geometry.attributes.position.needsUpdate=true;
+      const dEl=document.getElementById('tg-deg'),rEl=document.getElementById('tg-rad'),sEl=document.getElementById('tg-sin'),cEl=document.getElementById('tg-cos'),tEl=document.getElementById('tg-tan');
+      if(dEl)dEl.textContent=((a*180/Math.PI)%360).toFixed(1)+'°';
+      if(rEl)rEl.textContent=(a%(2*Math.PI)).toFixed(3);
+      if(sEl)sEl.textContent=s.toFixed(4);if(cEl)cEl.textContent=c.toFixed(4);
+      if(tEl)tEl.textContent=Math.abs(c)<.001?'∞':(s/c).toFixed(4);
+    }
+    setAngle(0);
+    return{scene,cam,ctrl,
+      update(dt){if(autoAnim){angle+=dt*speed;setAngle(angle);}},
+      panel:`<h2>∿ Trigonometry</h2>
+        <div class="desc-box">${cfg.mode==='heights'?'Use trig ratios to find heights and distances':'Unit circle: sin θ = y-coord, cos θ = x-coord'}</div>
+        <div class="tog-row"><label>Auto-Animate</label><label class="tog"><input type="checkbox" id="tg-auto" checked><span class="sl"></span></label></div>
+        <div class="cg"><label>Speed <span class="val" id="tg-sp-v">1.0</span></label>
+        <input type="range" id="tg-sp" min="0.1" max="4" step="0.1" value="1"></div>
+        <div class="cg"><label>Manual Angle</label>
+        <input type="range" id="tg-ang" min="0" max="360" value="0"></div>
+        <hr class="sep"><h3>Values</h3>
+        <div class="stat-grid">
+          <div class="stat"><div class="s-label">Degrees</div><div class="s-val" id="tg-deg">0°</div></div>
+          <div class="stat"><div class="s-label">Radians</div><div class="s-val" id="tg-rad">0</div></div>
+        </div>
+        <div class="stat-grid">
+          <div class="stat"><div class="s-label">sin θ</div><div class="s-val" id="tg-sin" style="color:#66bb6a">0</div></div>
+          <div class="stat"><div class="s-label">cos θ</div><div class="s-val" id="tg-cos" style="color:#4fc3f7">0</div></div>
+        </div>
+        <div class="stat"><div class="s-label">tan θ</div><div class="s-val" id="tg-tan" style="color:#ab47bc">0</div></div>`,
+      bind(){
+        document.getElementById('tg-auto').onchange=e=>{autoAnim=e.target.checked};
+        const sp=document.getElementById('tg-sp');if(sp)sp.oninput=()=>{speed=+sp.value;document.getElementById('tg-sp-v').textContent=speed.toFixed(1);};
+        const ag=document.getElementById('tg-ang');if(ag)ag.oninput=()=>{autoAnim=false;document.getElementById('tg-auto').checked=false;setAngle(+ag.value*Math.PI/180);};
+      }
+    };
+  }
+};
+
+// ── DATA VISUALIZATION ─────────────────────────────────────
+ENGINES.dataviz = {
+  init(cfg){
+    const {scene,cam,ctrl}=mkScene([0,4,10]);
+    let objs=[];let data=[4,7,2,9,5,6,3];const labels=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    const colors=[0x4fc3f7,0xff7043,0x66bb6a,0xab47bc,0xffd54f,0x26c6da,0xffa726];
+    function buildBar(){
+      clearGroup(objs,scene);
+      const max=Math.max(...data,1);
+      data.forEach((v,i)=>{
+        const h=v/max*4;
+        const g=new THREE.BoxGeometry(.7,h,.7);
+        const m=new THREE.Mesh(g,new THREE.MeshPhongMaterial({color:colors[i%colors.length],transparent:true,opacity:.8}));
+        m.position.set((i-data.length/2)*1.1,h/2,0);scene.add(m);objs.push(m);
+        const lbl=mkSprite(labels[i]||`D${i+1}`,'#aaa',22);lbl.position.set(m.position.x,-.4,0);scene.add(lbl);objs.push(lbl);
+        const val=mkSprite(String(v),'#fff',24);val.position.set(m.position.x,h+.3,0);scene.add(val);objs.push(val);
+      });
+      // Mean line
+      const mean=data.reduce((a,b)=>a+b,0)/data.length;
+      const meanH=mean/max*4;
+      const ml=new THREE.Line(new THREE.BufferGeometry().setFromPoints([new THREE.Vector3(-5,meanH,0),new THREE.Vector3(5,meanH,0)]),
+        new THREE.LineBasicMaterial({color:0xffd54f,transparent:true,opacity:.5}));
+      scene.add(ml);objs.push(ml);
+      const mLbl=mkSprite(`mean=${mean.toFixed(1)}`,'#ffd54f',22);mLbl.position.set(4,meanH+.3,0);scene.add(mLbl);objs.push(mLbl);
+      const mEl=document.getElementById('dv-mean');if(mEl)mEl.textContent=mean.toFixed(2);
+      const sorted=[...data].sort((a,b)=>a-b);
+      const median=sorted.length%2?sorted[Math.floor(sorted.length/2)]:(sorted[sorted.length/2-1]+sorted[sorted.length/2])/2;
+      const mdEl=document.getElementById('dv-median');if(mdEl)mdEl.textContent=median;
+      const freq={};data.forEach(v=>freq[v]=(freq[v]||0)+1);let mode=data[0],mf=0;
+      Object.entries(freq).forEach(([k,v])=>{if(v>mf){mf=v;mode=k;}});
+      const moEl=document.getElementById('dv-mode');if(moEl)moEl.textContent=mode;
+    }
+    buildBar();
+    return{scene,cam,ctrl,update(){},
+      panel:`<h2>📊 Data Visualization</h2>
+        <div class="desc-box">${cfg.type==='histogram'?'Grouped frequency distribution as histograms':cfg.type==='grouped'?'Mean, median, mode for grouped data':cfg.type==='pie'?'Pie chart representation':cfg.type==='profitloss'?'Visualize profit and loss as bar comparison':'3D bar chart with statistics — edit values below.'}</div>
+        <div class="cg"><label>Data (comma-separated)</label>
+        <input type="text" id="dv-data" value="${data.join(',')}"></div>
+        <button class="btn" id="dv-update" style="width:100%;margin-bottom:10px">Update Chart</button>
+        <hr class="sep"><h3>Statistics</h3>
+        <div class="stat-grid">
+          <div class="stat"><div class="s-label">Mean</div><div class="s-val" id="dv-mean">5.14</div></div>
+          <div class="stat"><div class="s-label">Median</div><div class="s-val" id="dv-median">5</div></div>
+        </div>
+        <div class="stat"><div class="s-label">Mode</div><div class="s-val" id="dv-mode">—</div></div>`,
+      bind(){
+        document.getElementById('dv-update').onclick=()=>{
+          const raw=document.getElementById('dv-data').value;
+          data=raw.split(',').map(Number).filter(n=>isFinite(n));
+          if(data.length)buildBar();};
+      }
+    };
+  }
+};
+
+// ── PROBABILITY ────────────────────────────────────────────
+ENGINES.probability = {
+  init(cfg){
+    const {scene,cam,ctrl}=mkScene([0,3,6]);
+    // Dice
+    const diceGeo=new THREE.BoxGeometry(1.5,1.5,1.5);
+    const diceMat=new THREE.MeshPhongMaterial({color:0xffffff,transparent:true,opacity:.9});
+    const dice=new THREE.Mesh(diceGeo,diceMat);
+    dice.position.y=1.5;scene.add(dice);
+    const edge=new THREE.LineSegments(new THREE.EdgesGeometry(diceGeo),new THREE.LineBasicMaterial({color:0x333}));
+    edge.position.copy(dice.position);scene.add(edge);
+    // Dots on faces
+    const dotGeo=new THREE.CircleGeometry(.1,16);
+    const dotMat=new THREE.MeshBasicMaterial({color:0x333,side:THREE.DoubleSide});
+    let dots=[];let result=1,rolls=[],rolling=false,rollTime=0;
+    function showResult(n){
+      dots.forEach(d=>{scene.remove(d);d.geometry.dispose();});dots=[];
+      result=n;
+      const positions={
+        1:[[0,0]],2:[[-0.3,-0.3],[0.3,0.3]],3:[[-0.3,-0.3],[0,0],[0.3,0.3]],
+        4:[[-0.3,-0.3],[0.3,-0.3],[-0.3,0.3],[0.3,0.3]],
+        5:[[-0.3,-0.3],[0.3,-0.3],[0,0],[-0.3,0.3],[0.3,0.3]],
+        6:[[-0.3,-0.3],[0.3,-0.3],[-0.3,0],[0.3,0],[-0.3,0.3],[0.3,0.3]]
+      };
+      (positions[n]||[]).forEach(([x,y])=>{
+        const d=new THREE.Mesh(dotGeo.clone(),dotMat.clone());
+        d.position.set(x+dice.position.x,y+dice.position.y,.76+dice.position.z);scene.add(d);dots.push(d);
+      });
+      const rEl=document.getElementById('pb-result');if(rEl)rEl.textContent=n;
+    }
+    showResult(1);
+    return{scene,cam,ctrl,
+      update(dt){if(rolling){rollTime+=dt;dice.rotation.x+=dt*8;dice.rotation.y+=dt*6;
+        if(rollTime>1){rolling=false;dice.rotation.set(0,0,0);
+          const r=Math.floor(Math.random()*6)+1;rolls.push(r);showResult(r);
+          const hEl=document.getElementById('pb-hist');if(hEl)hEl.textContent=rolls.slice(-10).join(', ');
+          const tEl=document.getElementById('pb-total');if(tEl)tEl.textContent=rolls.length;
+        }}},
+      panel:`<h2>🎲 Probability</h2>
+        <div class="desc-box">${cfg.level>=2?'Classical probability P(E) = favorable/total':'Roll the dice and track outcomes. Is each number equally likely?'}</div>
+        <button class="btn" id="pb-roll" style="width:100%;margin-bottom:10px;padding:12px;font-size:.9rem">🎲 Roll Dice</button>
+        <hr class="sep">
+        <div class="stat"><div class="s-label">Last Result</div><div class="s-val" id="pb-result">1</div></div>
+        <div class="stat"><div class="s-label">Total Rolls</div><div class="s-val" id="pb-total">0</div></div>
+        <div class="stat"><div class="s-label">Recent History</div><div class="s-val" id="pb-hist" style="font-size:.8rem">—</div></div>
+        <div class="stat"><div class="s-label">P(any face)</div><div class="s-val">1/6 ≈ 0.1667</div></div>`,
+      bind(){
+        document.getElementById('pb-roll').onclick=()=>{if(!rolling){rolling=true;rollTime=0;}};
+      }
+    };
+  }
+};
+
+// ── ARITHMETIC PROGRESSION ─────────────────────────────────
+ENGINES.ap = {
+  init(){
+    const {scene,cam,ctrl}=mkScene([0,4,10]);
+    let objs=[];let a=2,d=3,n=8;
+    const colors=[0x4fc3f7,0xff7043,0x66bb6a,0xab47bc,0xffd54f,0x26c6da,0xffa726,0xff5252];
+    function build(){
+      clearGroup(objs,scene);
+      for(let i=0;i<n;i++){
+        const val=a+i*d;const h=Math.abs(val)/2+.2;
+        const g=new THREE.BoxGeometry(.7,h,.7);
+        const m=new THREE.Mesh(g,new THREE.MeshPhongMaterial({color:colors[i%colors.length],transparent:true,opacity:.8}));
+        m.position.set((i-n/2)*1,h/2,0);scene.add(m);objs.push(m);
+        const lbl=mkSprite(String(val),'#fff',26);lbl.position.set(m.position.x,h+.3,0);scene.add(lbl);objs.push(lbl);
+      }
+      const nth=a+(n-1)*d;const sum=n*(2*a+(n-1)*d)/2;
+      const nEl=document.getElementById('ap-nth');if(nEl)nEl.textContent=nth;
+      const sEl=document.getElementById('ap-sum');if(sEl)sEl.textContent=sum;
+    }
+    build();
+    return{scene,cam,ctrl,update(){},
+      panel:`<h2>📈 Arithmetic Progression</h2>
+        <div class="desc-box">AP: a, a+d, a+2d, … Heights show term values.</div>
+        <div class="cg"><label>First term (a) <span class="val" id="ap-a-v">2</span></label>
+        <input type="range" id="ap-a" min="-5" max="10" value="2"></div>
+        <div class="cg"><label>Common difference (d) <span class="val" id="ap-d-v">3</span></label>
+        <input type="range" id="ap-d" min="-5" max="10" value="3"></div>
+        <div class="cg"><label>Number of terms (n) <span class="val" id="ap-n-v">8</span></label>
+        <input type="range" id="ap-n" min="2" max="15" value="8"></div>
+        <hr class="sep">
+        <div class="stat-grid">
+          <div class="stat"><div class="s-label">nth Term</div><div class="s-val" id="ap-nth">23</div></div>
+          <div class="stat"><div class="s-label">Sum of n terms</div><div class="s-val" id="ap-sum">100</div></div>
+        </div>`,
+      bind(){
+        const sa=document.getElementById('ap-a'),sd=document.getElementById('ap-d'),sn=document.getElementById('ap-n');
+        function upd(){a=+sa.value;d=+sd.value;n=+sn.value;build();
+          document.getElementById('ap-a-v').textContent=a;document.getElementById('ap-d-v').textContent=d;document.getElementById('ap-n-v').textContent=n;}
+        if(sa)sa.oninput=upd;if(sd)sd.oninput=upd;if(sn)sn.oninput=upd;
+      }
+    };
+  }
+};
+
+// ════════════════════════════════════════════════════════════
+// UI CONTROLLER
+// ════════════════════════════════════════════════════════════
+const classTabs=document.getElementById('class-tabs');
+const topicList=document.getElementById('topic-list');
+const pc=document.getElementById('pc');
+
+// Build class tabs
+CUR.forEach(cl=>{
+  const btn=document.createElement('button');btn.className='class-tab'+(cl.c===1?' active':'');
+  btn.textContent=cl.c;btn.dataset.cls=cl.c;
+  btn.onclick=()=>selectClass(cl.c);
+  classTabs.appendChild(btn);
+});
+
+function selectClass(c){
+  APP.cls=c;
+  document.querySelectorAll('.class-tab').forEach(b=>b.classList.toggle('active',+b.dataset.cls===c));
+  renderTopics();
+}
+
+function renderTopics(){
+  const cl=CUR.find(c=>c.c===APP.cls);if(!cl)return;
+  topicList.innerHTML='';
+  cl.topics.forEach(t=>{
+    const div=document.createElement('div');div.className='topic-item'+(t.id===APP.topicId?' active':'');
+    div.innerHTML=`<span class="t-icon">${t.icon}</span><span class="t-name">${t.name}</span>`;
+    div.onclick=()=>loadTopic(t);
+    topicList.appendChild(div);
+  });
+}
+
+function loadTopic(t){
+  APP.topicId=t.id;
+  document.querySelectorAll('.topic-item').forEach(d=>d.classList.toggle('active',false));
+  // highlight
+  [...topicList.children].forEach(d=>{if(d.querySelector('.t-name')?.textContent===t.name)d.classList.add('active');});
+  // Info bar
+  document.querySelector('.ib-class').textContent=CUR.find(c=>c.c===APP.cls)?.name||'';
+  document.querySelector('.ib-topic').textContent=t.name;
+  // Init engine
+  const engFactory=ENGINES[t.eng];
+  if(!engFactory){pc.innerHTML=`<h2>${t.name}</h2><div class="desc-box">${t.desc}</div><p style="color:var(--text-dim);font-size:.8rem">Engine "${t.eng}" coming soon.</p>`;activeEngine=null;return;}
+  activeEngine=engFactory.init(t.cfg||{});
+  pc.innerHTML=activeEngine.panel||'';
+  activeEngine.bind?.();
+  resize();
+}
+
+// ── SEARCH ─────────────────────────────────────────────────
+const searchInput=document.getElementById('search-input');
+const searchResults=document.getElementById('search-results');
+const allTopics=[];
+CUR.forEach(cl=>cl.topics.forEach(t=>allTopics.push({...t,cls:cl.c,clsName:cl.name})));
+
+searchInput.addEventListener('input',()=>{
+  const q=searchInput.value.trim().toLowerCase();
+  if(!q){searchResults.style.display='none';return;}
+  const matches=allTopics.filter(t=>t.name.toLowerCase().includes(q)||t.desc.toLowerCase().includes(q));
+  if(matches.length){
+    searchResults.innerHTML=matches.slice(0,12).map((t,i)=>`<div class="sr-item" data-si="${i}">${t.icon} ${t.name}<div class="sr-class">${t.clsName}</div></div>`).join('');
+    searchResults.style.display='block';
+    searchResults.querySelectorAll('.sr-item').forEach(el=>{
+      el.onclick=()=>{const t=matches[+el.dataset.si];selectClass(t.cls);loadTopic(t);
+        searchInput.value='';searchResults.style.display='none';};
+    });
+  } else {
+    searchResults.innerHTML='<div class="sr-empty">No topics found</div>';searchResults.style.display='block';
+  }
+});
+searchInput.addEventListener('keydown',e=>{if(e.key==='Escape'){searchInput.value='';searchResults.style.display='none';searchInput.blur();}});
+
+// ── ANNOTATION ─────────────────────────────────────────────
+const annModal=document.getElementById('ann-modal'),annText=document.getElementById('ann-text');
+let pendingAnn=null;
+document.getElementById('btn-ann').onclick=()=>{APP.annotating=!APP.annotating;document.getElementById('btn-ann').classList.toggle('active',APP.annotating);renderer.domElement.style.cursor=APP.annotating?'crosshair':'';};
+renderer.domElement.addEventListener('click',e=>{
+  if(!APP.annotating||!activeEngine)return;
+  const rect=renderer.domElement.getBoundingClientRect();
+  const mouse=new THREE.Vector2(((e.clientX-rect.left)/rect.width)*2-1,-((e.clientY-rect.top)/rect.height)*2+1);
+  const rc=new THREE.Raycaster();rc.setFromCamera(mouse,activeEngine.cam);
+  const hits=rc.intersectObjects(activeEngine.scene.children,true);
+  let wp;if(hits.length)wp=hits[0].point.clone();
+  else{const pl=new THREE.Plane(new THREE.Vector3(0,0,1),0);wp=new THREE.Vector3();if(!rc.ray.intersectPlane(pl,wp))return;}
+  pendingAnn={world:wp};
+  annModal.style.display='block';annModal.style.left=(e.clientX-container.getBoundingClientRect().left)+'px';
+  annModal.style.top=(e.clientY-container.getBoundingClientRect().top)+'px';annText.value='';annText.focus();
+});
+function addAnn(){
+  if(!pendingAnn||!annText.value.trim()){annModal.style.display='none';pendingAnn=null;return;}
+  if(!APP.anns[APP.topicId])APP.anns[APP.topicId]=[];
+  APP.anns[APP.topicId].push({world:pendingAnn.world,text:annText.value.trim()});
+  annModal.style.display='none';pendingAnn=null;APP.annotating=false;
+  document.getElementById('btn-ann').classList.remove('active');renderer.domElement.style.cursor='';
+  renderAnns();
+}
+document.getElementById('ann-ok').onclick=addAnn;
+annText.addEventListener('keydown',e=>{if(e.key==='Enter')addAnn();if(e.key==='Escape'){annModal.style.display='none';pendingAnn=null;}});
+document.getElementById('ann-no').onclick=()=>{annModal.style.display='none';pendingAnn=null;};
+function renderAnns(){
+  container.querySelectorAll('.ann').forEach(el=>el.remove());
+  (APP.anns[APP.topicId]||[]).forEach(a=>{
+    const div=document.createElement('div');div.className='ann';
+    div.innerHTML=`<div class="dot"></div><div class="lbl">${a.text}</div>`;div._w=a.world;container.appendChild(div);
+  });
+}
+function updateAnns(){
+  if(!activeEngine)return;const{w,h}=sz();
+  container.querySelectorAll('.ann').forEach(div=>{
+    const wp=div._w;if(!wp)return;const v=wp.clone().project(activeEngine.cam);
+    div.style.left=(v.x*.5+.5)*w+'px';div.style.top=(-v.y*.5+.5)*h+'px';div.style.display=v.z>1?'none':'';
+  });
+}
+
+// ── FULLSCREEN ─────────────────────────────────────────────
+document.getElementById('btn-fs').onclick=()=>{document.getElementById('app').classList.toggle('fs');setTimeout(resize,50);};
+
+// ── RESIZE ─────────────────────────────────────────────────
+function resize(){
+  const{w,h}=sz();if(!activeEngine)return;
+  activeEngine.cam.aspect=w/h;activeEngine.cam.updateProjectionMatrix();renderer.setSize(w,h);
+}
+window.addEventListener('resize',resize);
+
+// ── ANIMATION LOOP ─────────────────────────────────────────
+let last=0;
+function animate(t){
+  requestAnimationFrame(animate);
+  const dt=Math.min((t-last)/1000,.1);last=t;
+  if(!activeEngine)return;
+  activeEngine.ctrl.update();activeEngine.update(dt);
+  renderer.render(activeEngine.scene,activeEngine.cam);updateAnns();
+}
+
+// ── INIT ───────────────────────────────────────────────────
+renderTopics();
+loadTopic(CUR[0].topics[0]);
+animate(0);
+</script>
+</body>
+</html>
